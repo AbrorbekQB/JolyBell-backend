@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    password: 1234
+    url: jdbc:postgresql://localhost:5432/jolybell
+    username: postgres
+    hikari:
+      minimum-idle: 1
+      max-lifetime: 40000
+      keepalive-time: 30000
+
+  jpa:
+    database: postgresql
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL95Dialect
+        temp:
+          use_jdbc_metadata_defaults: false
+    show-sql: true
+  sql:
+    init:
+      encoding: UTF-8
