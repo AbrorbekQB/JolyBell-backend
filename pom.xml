@@ -10,7 +10,7 @@
     </parent>
     <groupId>uz.greenstar</groupId>
     <artifactId>JolyBell</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>JolyBell</name>
     <description>JolyBell</description>
     <properties>
@@ -40,6 +40,17 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.vladmihalcea</groupId>
+            <artifactId>hibernate-types-52</artifactId>
+            <version>2.14.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jsonSchema</artifactId>
+            <version>2.13.2</version>
         </dependency>
     </dependencies>
 

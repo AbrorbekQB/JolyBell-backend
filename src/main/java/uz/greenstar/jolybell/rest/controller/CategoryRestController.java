@@ -10,6 +10,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/category")
 @RequiredArgsConstructor
+@CrossOrigin("http://localhost:4200")
 public class CategoryRestController {
     private final CategoryService categoryService;
 
@@ -24,7 +25,7 @@ public class CategoryRestController {
     }
 
     @GetMapping("/list")
-    public List<CategoryDTO> list(){
+    public List<CategoryDTO> list() {
         return categoryService.getList();
     }
 }
