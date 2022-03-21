@@ -2,6 +2,7 @@ package uz.greenstar.jolybell.dto;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import uz.greenstar.jolybell.enums.Role;
 
 @Data
 @RequiredArgsConstructor
@@ -13,4 +14,5 @@ public class UserDTO {
     private String patronym;
     private String password;
     private String phoneNumber;
+    private Role role;
 }
