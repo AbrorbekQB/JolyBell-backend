@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Data
 @Table
-@Entity(name = "order")
+@Entity(name = "orders")
 public class OrderEntity {
     @Id
     private String id = UUID.randomUUID().toString();

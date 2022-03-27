@@ -2,7 +2,7 @@ spring:
   datasource:
     driver-class-name: org.postgresql.Driver
     password: 1234
-    url: jdbc:postgresql://localhost:5432/jolybell
+    url: jdbc:postgresql://localhost:5433/jolybell
     username: postgres
     hikari:
       minimum-idle: 1
@@ -29,3 +29,7 @@ logging:
     uz:
       greenstar:
         DEBUG
+
+jwt:
+  secret:
+    key: secretkey

@@ -11,9 +11,4 @@ import uz.greenstar.jolybell.service.UserService;
 @CrossOrigin("http://localhost:4200")
 public class UserRestController {
     private final UserService userService;
-
-    @PostMapping("/login")
-    public String login(@RequestBody UserDTO userDTO){
-        return userService.login(userDTO);
-    }
 }
