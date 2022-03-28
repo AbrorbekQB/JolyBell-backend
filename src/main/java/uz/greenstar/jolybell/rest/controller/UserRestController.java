@@ -9,8 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 import uz.greenstar.jolybell.dto.UserDTO;
 import uz.greenstar.jolybell.service.UserService;
 
-import javax.servlet.http.HttpServletRequest;
-
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
@@ -19,7 +17,7 @@ public class UserRestController {
     private final UserService userService;
 
     @GetMapping("/get")
-    public ResponseEntity<UserDTO> get(HttpServletRequest request) {
-        return ResponseEntity.ok(userService.get(request.getHeader("userId")));
+    public ResponseEntity<UserDTO> get() {
+        return ResponseEntity.ok(userService.get());
     }
 }

@@ -1,27 +1,41 @@
 package uz.greenstar.jolybell.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.dto.UserDTO;
 import uz.greenstar.jolybell.entity.UserEntity;
-import uz.greenstar.jolybell.exception.BadCredentialsException;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
 import uz.greenstar.jolybell.repository.UserRepository;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        Optional<UserEntity> optionalUser = userRepository.findByUsername(username);
+        if (optionalUser.isEmpty())
+            throw new UsernameNotFoundException(username + " not found");
+
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        optionalUser.get().getRoleList().forEach(roleEntity -> {
+            authorities.add(new SimpleGrantedAuthority(roleEntity.getName()));
+        });
+        return new User(optionalUser.get().getUsername(), optionalUser.get().getPassword(), authorities);
+    }
+
 //    private final AuthenticationManager authenticationManager;
 
     public String login(UserDTO userDTO) {
@@ -32,7 +46,7 @@ public class UserService {
         return "1231234124";
     }
 
-    public UserDTO get(String userId) {
+    public UserDTO get() {
         Authentication authenticate = SecurityContextHolder.getContext().getAuthentication();
         Optional<UserEntity> optionalUser = userRepository.findByUsername(authenticate.getName());
         if (optionalUser.isEmpty())
