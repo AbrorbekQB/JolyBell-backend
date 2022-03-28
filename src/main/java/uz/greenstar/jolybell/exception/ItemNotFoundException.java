@@ -1,4 +1,4 @@
-package uz.greenstar.jolybell.exceptions;
+package uz.greenstar.jolybell.exception;
 
 public class ItemNotFoundException extends RuntimeException {
     private String message;

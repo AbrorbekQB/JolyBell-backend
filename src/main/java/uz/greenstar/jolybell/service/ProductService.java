@@ -6,11 +6,10 @@ import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.dto.ProductDTO;
 import uz.greenstar.jolybell.entity.CategoryEntity;
 import uz.greenstar.jolybell.entity.ProductEntity;
-import uz.greenstar.jolybell.exceptions.CategoryNotFoundException;
+import uz.greenstar.jolybell.exception.CategoryNotFoundException;
 import uz.greenstar.jolybell.repository.CategoryRepository;
 import uz.greenstar.jolybell.repository.ProductRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;

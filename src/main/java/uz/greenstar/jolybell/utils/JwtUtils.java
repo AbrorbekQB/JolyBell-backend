@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.api.jwt.JwtDTO;
+import uz.greenstar.jolybell.entity.UserEntity;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -25,14 +26,14 @@ public class JwtUtils {
 
         String jwt = Jwts.builder()
                 .setSubject(new Gson().toJson(dto))
-                .setIssuedAt(new Date(time))
-                .setExpiration(new Date(time + 86400))
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(new Date().getTime() + 86400000))
                 .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
         return jwt;
     }
 
-    public JwtDTO isValidToken(String token) {
+    public JwtDTO decode(String token) {
         String secretKey = environment.getProperty("jwt.secret.key");
         Claims claims = Jwts.parser()
                 .setSigningKey(secretKey)
@@ -40,5 +41,14 @@ public class JwtUtils {
                 .getBody();
 
         return new Gson().fromJson(claims.getSubject(), JwtDTO.class);
+    }
+
+    public boolean validate(String token) {
+        try {
+            Jwts.parser().setSigningKey(environment.getProperty("jwt.secret.key")).parseClaimsJws(token);
+            return true;
+        } catch (Exception ex) {
+            return false;
+        }
     }
 }

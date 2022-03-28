@@ -1,34 +1,29 @@
 package uz.greenstar.jolybell.entity;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import javax.persistence.*;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
-@Data
+@Setter
+@Getter
 @Table
 @Entity(name = "users")
 public class UserEntity {
     @Id
     private String id = UUID.randomUUID().toString();
+    private Boolean active = Boolean.FALSE;
     private String username;
-    private String firstname;
-    private String lastname;
-    private String patronym;
+    private String firstname = "";
+    private String lastname = "";
+    private String patronymic = "";
     private String password;
-    private String phoneNumber;
-    private LocalDateTime createTime;
-    private LocalDateTime lastUpdateTime;
+    private String phoneNumber = "";
+    private LocalDateTime createTime = LocalDateTime.now();
+    private LocalDateTime lastUpdateTime = LocalDateTime.now();
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_role",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    Set<RoleEntity> roles = new HashSet<>();
+    @OneToMany(mappedBy = "user")
+    private Set<UserRoleEntity> roleList;
 }

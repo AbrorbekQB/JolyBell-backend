@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uz.greenstar.jolybell.dto.CategoryDTO;
 import uz.greenstar.jolybell.entity.CategoryEntity;
-import uz.greenstar.jolybell.exceptions.CategoryNotFoundException;
+import uz.greenstar.jolybell.exception.CategoryNotFoundException;
 import uz.greenstar.jolybell.repository.CategoryRepository;
 
 import java.util.List;

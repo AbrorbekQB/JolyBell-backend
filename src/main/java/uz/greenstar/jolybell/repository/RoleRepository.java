@@ -6,5 +6,5 @@ import uz.greenstar.jolybell.entity.RoleEntity;
 import java.util.Optional;
 
 public interface RoleRepository extends JpaRepository<RoleEntity, String> {
-    Optional<RoleEntity> findByRole(String name);
+    Optional<RoleEntity> findByName(String name);
 }
