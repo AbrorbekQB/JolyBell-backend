@@ -2,7 +2,8 @@ package uz.greenstar.jolybell.rest.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import uz.greenstar.jolybell.dto.BookingDTO;
+import uz.greenstar.jolybell.api.order.OrderItem;
+import uz.greenstar.jolybell.dto.OrderDTO;
 import uz.greenstar.jolybell.service.OrderService;
 
 @RestController
@@ -10,20 +11,20 @@ import uz.greenstar.jolybell.service.OrderService;
 @RequiredArgsConstructor
 @CrossOrigin("http://localhost:4200")
 public class OrderRestController {
-    private final OrderService bookingService;
+    private final OrderService orderService;
 
     @PostMapping("/create")
-    public String create(@RequestBody BookingDTO bookingDTO) {
-        return bookingService.create(bookingDTO);
+    public String create(@RequestBody OrderItem orderItem) {
+        return orderService.create(orderItem);
     }
 
-    @PostMapping("/update")
-    public void update(@RequestBody BookingDTO bookingDTO) {
-        bookingService.update(bookingDTO);
+    @PostMapping("/update/{id}")
+    public void update(@RequestBody OrderItem orderItem, @PathVariable("id") String orderId) {
+        orderService.update(orderId, orderItem);
     }
-
-    @GetMapping("/get/{id}")
-    public BookingDTO get(@PathVariable("id") String id) {
-        return bookingService.get(id);
-    }
+//
+//    @GetMapping("/get/{id}")
+//    public OrderDTO get(@PathVariable("id") String id) {
+//        return orderService.get(id);
+//    }
 }

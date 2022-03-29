@@ -32,8 +32,10 @@ public class ProductService {
         productRepository.save(productEntity);
     }
 
-    public List<ProductDTO> getList() {
-        return productRepository.findAll().stream().map(productEntity -> {
+    public List<ProductDTO> getList(String categoryName) {
+
+        List<ProductEntity> productEntityList = productRepository.findAllByCategoryUrl(categoryName);
+        return productEntityList.stream().map(productEntity -> {
             ProductDTO productDTO = new ProductDTO();
             BeanUtils.copyProperties(productEntity, productDTO);
             productDTO.setCategoryId(productEntity.getCategory().getId());
@@ -41,18 +43,18 @@ public class ProductService {
         }).collect(Collectors.toList());
     }
 
-    public List<ProductDTO> getListByName(String url) {
-        List<ProductEntity> productEntityList = productRepository.findAllByCategoryUrl(url);
-        Optional<CategoryEntity> optionalCategory = categoryRepository.findByUrl(url);
-        if (optionalCategory.isEmpty())
-            throw new CategoryNotFoundException("Category not found!");
-        return optionalCategory.get().getProductList().stream().map(productEntity -> {
-            ProductDTO productDTO = new ProductDTO();
-            BeanUtils.copyProperties(productEntity, productDTO);
-            productDTO.setCategoryId(productEntity.getCategory().getId());
-            return productDTO;
-        }).collect(Collectors.toList());
-    }
+//    public List<ProductDTO> getListByName(String url) {
+//        List<ProductEntity> productEntityList = productRepository.findAllByCategoryUrl(url);
+//        Optional<CategoryEntity> optionalCategory = categoryRepository.findByUrl(url);
+//        if (optionalCategory.isEmpty())
+//            throw new CategoryNotFoundException("Category not found!");
+//        return optionalCategory.get().getProductList().stream().map(productEntity -> {
+//            ProductDTO productDTO = new ProductDTO();
+//            BeanUtils.copyProperties(productEntity, productDTO);
+//            productDTO.setCategoryId(productEntity.getCategory().getId());
+//            return productDTO;
+//        }).collect(Collectors.toList());
+//    }
 
     public ProductDTO getById(String id) {
         ProductDTO productDTO = new ProductDTO();

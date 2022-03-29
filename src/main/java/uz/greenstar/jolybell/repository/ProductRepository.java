@@ -8,6 +8,6 @@ import uz.greenstar.jolybell.entity.ProductEntity;
 import java.util.List;
 
 public interface ProductRepository extends JpaRepository<ProductEntity, String>, JpaSpecificationExecutor<ProductEntity> {
-    @Query(value = "SELECT * FROM product", nativeQuery = true)
+    @Query(value = "SELECT * FROM product where category_id = (SELECT id FROM category WHERE url=:url)", nativeQuery = true)
     List<ProductEntity> findAllByCategoryUrl(String url);
 }

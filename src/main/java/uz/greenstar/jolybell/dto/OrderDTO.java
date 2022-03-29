@@ -5,7 +5,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class BookingDTO {
+public class OrderDTO {
     private String id;
     private String productId;
     private long count;

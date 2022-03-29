@@ -13,7 +13,4 @@ public class CategoryEntity {
     private String id;
     private String name;
     private String url;
-
-    @OneToMany(fetch = FetchType.LAZY)
-    List<ProductEntity> productList;
 }

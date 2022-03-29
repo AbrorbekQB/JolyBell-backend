@@ -19,18 +19,18 @@ public class ProductRestController {
         productService.create(productDTO);
     }
 
-    @GetMapping("/{name}")
-    public void getByName(@PathVariable("name") String name){
-        productService.getListByName(name);
-    }
+//    @GetMapping("/{name}")
+//    public void getByName(@PathVariable("name") String name) {
+//        productService.getListByName(name);
+//    }
 
     @GetMapping("/get/{id}")
-    public ProductDTO getById(@PathVariable("id") String id){
+    public ProductDTO getById(@PathVariable("id") String id) {
         return productService.getById(id);
     }
 
-    @GetMapping("/list")
-    public List<ProductDTO> getList() {
-        return productService.getList();
+    @GetMapping("/list/{categoryName}")
+    public List<ProductDTO> getList(@PathVariable("categoryName") String categoryName) {
+        return productService.getList(categoryName);
     }
 }
