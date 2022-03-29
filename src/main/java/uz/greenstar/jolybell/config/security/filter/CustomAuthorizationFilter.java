@@ -19,12 +19,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 public class CustomAuthorizationFilter extends OncePerRequestFilter {
+    private List<String> list;
+
+    public CustomAuthorizationFilter(List<String> list) {
+        this.list = list;
+    }
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        if (request.getServletPath().equals("/auth/login")) {
+        if (isSecured(request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -49,10 +57,22 @@ public class CustomAuthorizationFilter extends OncePerRequestFilter {
             } catch (Exception ex) {
                 log.error("Error logging in {}" + ex.getMessage());
                 response.setHeader("error", "token");
-                response.sendError(HttpServletResponse.SC_FORBIDDEN);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                SecurityContextHolder.getContext().setAuthentication(null);
             }
         } else {
             filterChain.doFilter(request, response);
         }
+    }
+
+    private boolean isSecured(String endPoint) {
+        AtomicReference<Boolean> isSecured = new AtomicReference<>(false);
+        list.forEach(whiteEndPoint -> {
+            if (endPoint.startsWith(whiteEndPoint)) {
+                isSecured.set(true);
+                return;
+            }
+        });
+        return isSecured.get();
     }
 }
