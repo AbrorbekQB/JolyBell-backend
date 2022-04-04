@@ -118,15 +118,22 @@ public class OrderService {
         if (!map.containsKey(orderItemRemove.getProductId()))
             throw new ProductNotFoundException("Product not found!");
 
-        List<OrderItem> list = map.get(orderItemRemove.getProductId()).stream()
-                .filter(orderItem -> !orderItem.getId().equals(orderItemRemove.getOrderItemId())).collect(Collectors.toList());
-        map.put(orderItemRemove.getProductId(), list);
+        List<OrderItem> orderItemList = new ArrayList<>(map.get(orderItemRemove.getProductId()));
+
+        map.get(orderItemRemove.getProductId()).forEach(orderItem -> {
+            if (orderItem.getId().equals(orderItemRemove.getOrderItemId())) {
+                orderItemList.remove(orderItem);
+                BigDecimal removeOrderItemAmount = orderItem.getCost().multiply(BigDecimal.valueOf(orderItem.getCount()));
+                optionalOrder.get().setTotalAmount(optionalOrder.get().getTotalAmount().subtract(removeOrderItemAmount));
+            }
+        });
+        map.put(orderItemRemove.getProductId(), orderItemList);
         optionalOrder.get().setOrderItems(map);
         optionalOrder.get().setLastUpdateTime(LocalDateTime.now());
         orderRepository.save(optionalOrder.get());
     }
 
-    public void checkout(String orderId) {
+    public void confirm(String orderId) {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty())
@@ -137,7 +144,7 @@ public class OrderService {
             throw new OrderNotFoundException("Order not found!");
 
         OrderEntity orderEntity = orderOptional.get();
-        orderEntity.setStatus(OrderStatus.CHECKOUT);
+        orderEntity.setStatus(OrderStatus.CONFIRM);
         orderEntity.setTotalAmount(orderEntity.getTotalAmount().add(BigDecimal.valueOf(5.0)));
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderEntity.setUser(userOptional.get());

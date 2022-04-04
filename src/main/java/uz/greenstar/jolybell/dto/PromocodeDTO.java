@@ -1,20 +1,15 @@
-package uz.greenstar.jolybell.entity;
+package uz.greenstar.jolybell.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.UUID;
 
 @Data
-@Table
-@Entity(name = "promocode")
-public class PromoCodeEntity {
-    @Id
-    private String id= UUID.randomUUID().toString();
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class PromocodeDTO {
+    private String id;
     private String code;
     private boolean active;
     private LocalDate startDate;

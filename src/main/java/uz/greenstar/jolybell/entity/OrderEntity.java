@@ -1,11 +1,6 @@
 package uz.greenstar.jolybell.entity;
 
-import com.vladmihalcea.hibernate.type.array.IntArrayType;
-import com.vladmihalcea.hibernate.type.array.StringArrayType;
 import com.vladmihalcea.hibernate.type.json.JsonBinaryType;
-import com.vladmihalcea.hibernate.type.json.JsonNodeBinaryType;
-import com.vladmihalcea.hibernate.type.json.JsonNodeStringType;
-import com.vladmihalcea.hibernate.type.json.JsonStringType;
 import lombok.Data;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;

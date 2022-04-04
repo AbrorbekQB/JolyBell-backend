@@ -38,7 +38,7 @@ public class OrderRestController {
 
     @PostMapping(path = "/checkout/{orderId}")
     public void checkout(@PathVariable("orderId") String orderId) {
-        orderService.checkout(orderId);
+        orderService.confirm(orderId);
     }
 //
 //    @GetMapping("/get/{id}")

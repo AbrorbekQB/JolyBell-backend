@@ -1,5 +1,5 @@
 package uz.greenstar.jolybell.enums;
 
 public enum OrderStatus {
-    PENDING, CHECKOUT, NONE
+    PENDING, CONFIRM, CHECKOUT, PAID;
 }
