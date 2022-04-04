@@ -1,38 +1,42 @@
 package uz.greenstar.jolybell.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.api.order.OrderItem;
+import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.OrderDTO;
 import uz.greenstar.jolybell.entity.OrderEntity;
+import uz.greenstar.jolybell.entity.ProductEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
-import uz.greenstar.jolybell.exception.ItemNotFoundException;
+import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
+import uz.greenstar.jolybell.exception.ProductNotFoundException;
 import uz.greenstar.jolybell.repository.OrderRepository;
+import uz.greenstar.jolybell.repository.ProductRepository;
 import uz.greenstar.jolybell.repository.UserRepository;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final ProductRepository productRepository;
 
     public String create(OrderItem orderItem) {
         OrderEntity orderEntity = new OrderEntity();
-        orderEntity.getOrderItems().put(orderItem.getProductId(), orderItem);
+        orderEntity.getOrderItems().put(orderItem.getProductId(), List.of(orderItem));
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
-        if (userOptional.isEmpty())
-            throw new ItemNotFoundException("User not found!");
+        userOptional.ifPresent(orderEntity::setUser);
+
         orderEntity.setTotalAmount(BigDecimal.ZERO.add(orderItem.getCost()).multiply(BigDecimal.valueOf(orderItem.getCount())));
-        orderEntity.setUser(userOptional.get());
         return orderRepository.save(orderEntity).getId();
     }
 
@@ -41,21 +45,103 @@ public class OrderService {
         if (optionalOrder.isEmpty())
             throw new OrderNotFoundException("Order not found!");
 
-        Map<String, OrderItem> orderItems = optionalOrder.get().getOrderItems();
-        OrderItem currentOrderItem = orderItems.get(orderItem.getProductId());
+        Map<String, List<OrderItem>> orderItems = updateOrder(optionalOrder.get().getOrderItems(), orderItem);
 
-        if (orderItems.containsKey(orderItem.getProductId()) && !currentOrderItem.getSize().equals(orderItem.getSize())) {
-            currentOrderItem.setCost(orderItem.getCost());
-            currentOrderItem.setCount(currentOrderItem.getCount() + orderItem.getCount());
-            orderItems.put(currentOrderItem.getProductId(), currentOrderItem);
-        } else {
-            orderItems.put(orderItem.getProductId(), orderItem);
-        }
-        optionalOrder.get().getTotalAmount().add(
-                optionalOrder.get().getTotalAmount()
-                        .add(orderItem.getCost().multiply(BigDecimal.valueOf(orderItem.getCount()))));
+        BigDecimal amount = optionalOrder.get().getTotalAmount()
+                .add(orderItem.getCost().multiply(BigDecimal.valueOf(orderItem.getCount())));
+        optionalOrder.get().setTotalAmount(amount);
         optionalOrder.get().setOrderItems(orderItems);
+        optionalOrder.get().setLastUpdateTime(LocalDateTime.now());
         orderRepository.save(optionalOrder.get());
+    }
+
+    private Map<String, List<OrderItem>> updateOrder(Map<String, List<OrderItem>> orderItems, OrderItem orderItem) {
+
+        if (!orderItems.containsKey(orderItem.getProductId())) {
+            orderItems.put(orderItem.getProductId(), List.of(orderItem));
+            return orderItems;
+        }
+
+        List<OrderItem> currentOrderItems = orderItems.get(orderItem.getProductId());
+        List<String> sizeList = currentOrderItems.stream().map(OrderItem::getSize).collect(Collectors.toList());
+
+        if (!sizeList.contains(orderItem.getSize())) {
+            orderItems.get(orderItem.getProductId()).add(orderItem);
+            return orderItems;
+        }
+
+        currentOrderItems.forEach(currentOrderItem -> {
+            if (currentOrderItem.getSize().equals(orderItem.getSize())) {
+                currentOrderItem.setCount(currentOrderItem.getCount() + orderItem.getCount());
+            }
+        });
+
+        return orderItems;
+    }
+
+    public OrderDTO getById(String id, OrderStatus status) {
+        Optional<OrderEntity> orderOptional = orderRepository.findByIdAndStatus(id, status);
+        if (orderOptional.isEmpty())
+            throw new OrderNotFoundException("Order not found!");
+
+        OrderEntity orderEntity = orderOptional.get();
+        OrderDTO orderDTO = new OrderDTO();
+        orderDTO.setId(orderEntity.getId());
+        orderDTO.setTotalAmount(orderEntity.getTotalAmount());
+
+        Set<String> productIdList = new HashSet<>();
+        orderEntity.getOrderItems().forEach((productId, orderItems) -> {
+            productIdList.add(productId);
+        });
+
+        Map<String, String> map = productRepository.findAllByIdIn(productIdList).stream().collect(Collectors.toMap(
+                ProductEntity::getId, productEntity -> productEntity.getImageItems().get(0).getUrl()
+        ));
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        orderEntity.getOrderItems().forEach((productId, orderItems1) -> {
+            orderItems1.forEach(orderItem -> {
+                orderItem.setUrl(map.get(orderItem.getProductId()));
+            });
+            orderItems.addAll(orderItems1);
+        });
+        orderDTO.setOrderItems(orderItems);
+        return orderDTO;
+    }
+
+    public void removeItem(OrderItemRemove orderItemRemove) {
+        Optional<OrderEntity> optionalOrder = orderRepository.findById(orderItemRemove.getOrderId());
+        if (optionalOrder.isEmpty())
+            throw new OrderNotFoundException("Order not found!");
+
+        Map<String, List<OrderItem>> map = optionalOrder.get().getOrderItems();
+        if (!map.containsKey(orderItemRemove.getProductId()))
+            throw new ProductNotFoundException("Product not found!");
+
+        List<OrderItem> list = map.get(orderItemRemove.getProductId()).stream()
+                .filter(orderItem -> !orderItem.getId().equals(orderItemRemove.getOrderItemId())).collect(Collectors.toList());
+        map.put(orderItemRemove.getProductId(), list);
+        optionalOrder.get().setOrderItems(map);
+        optionalOrder.get().setLastUpdateTime(LocalDateTime.now());
+        orderRepository.save(optionalOrder.get());
+    }
+
+    public void checkout(String orderId) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<UserEntity> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty())
+            throw new UsernameNotFoundException("User not found!");
+
+        Optional<OrderEntity> orderOptional = orderRepository.findById(orderId);
+        if (orderOptional.isEmpty())
+            throw new OrderNotFoundException("Order not found!");
+
+        OrderEntity orderEntity = orderOptional.get();
+        orderEntity.setStatus(OrderStatus.CHECKOUT);
+        orderEntity.setTotalAmount(orderEntity.getTotalAmount().add(BigDecimal.valueOf(5.0)));
+        orderEntity.setLastUpdateTime(LocalDateTime.now());
+        orderEntity.setUser(userOptional.get());
+        orderRepository.save(orderEntity);
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);

@@ -23,6 +23,9 @@ spring:
   sql:
     init:
       encoding: UTF-8
+  devtools:
+    livereload:
+      enabled: true
 
 logging:
   level:

@@ -1,9 +1,12 @@
 package uz.greenstar.jolybell.rest.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.aspectj.weaver.ast.Or;
 import org.springframework.web.bind.annotation.*;
 import uz.greenstar.jolybell.api.order.OrderItem;
+import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.OrderDTO;
+import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.service.OrderService;
 
 @RestController
@@ -21,6 +24,21 @@ public class OrderRestController {
     @PostMapping("/update/{id}")
     public void update(@RequestBody OrderItem orderItem, @PathVariable("id") String orderId) {
         orderService.update(orderId, orderItem);
+    }
+
+    @GetMapping(path = "/{id}")
+    public OrderDTO get(@PathVariable("id") String id) {
+        return orderService.getById(id, OrderStatus.PENDING);
+    }
+
+    @PostMapping(path = "/remove/item")
+    public void removeItem(@RequestBody OrderItemRemove orderItemRemove) {
+        orderService.removeItem(orderItemRemove);
+    }
+
+    @PostMapping(path = "/checkout/{orderId}")
+    public void checkout(@PathVariable("orderId") String orderId) {
+        orderService.checkout(orderId);
     }
 //
 //    @GetMapping("/get/{id}")

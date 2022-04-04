@@ -37,13 +37,13 @@ public class OrderEntity {
     @Enumerated(EnumType.STRING)
     private PaymentType paymentType = PaymentType.NONE;
     @Enumerated(EnumType.STRING)
-    private OrderState state = OrderState.NONE;
+    private OrderState state = OrderState.PENDING;
     @Enumerated(EnumType.STRING)
-    private OrderStatus status = OrderStatus.NONE;
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private Map<String, OrderItem> orderItems = new HashMap();
+    private Map<String, List<OrderItem>> orderItems = new HashMap();
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
