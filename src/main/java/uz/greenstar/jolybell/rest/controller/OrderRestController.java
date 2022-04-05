@@ -36,7 +36,7 @@ public class OrderRestController {
         orderService.removeItem(orderItemRemove);
     }
 
-    @PostMapping(path = "/checkout/{orderId}")
+    @GetMapping(path = "/confirm/{orderId}")
     public void checkout(@PathVariable("orderId") String orderId) {
         orderService.confirm(orderId);
     }
