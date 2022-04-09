@@ -1,5 +1,6 @@
 package uz.greenstar.jolybell.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,6 +12,7 @@ import java.util.*;
 @Getter
 @Table
 @Entity(name = "users")
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class UserEntity {
     @Id
     private String id = UUID.randomUUID().toString();

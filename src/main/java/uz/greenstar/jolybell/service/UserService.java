@@ -1,6 +1,11 @@
 package uz.greenstar.jolybell.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -9,14 +14,20 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import uz.greenstar.jolybell.api.pagination.PaginationRequest;
+import uz.greenstar.jolybell.api.pagination.PaginationResponse;
 import uz.greenstar.jolybell.dto.UserDTO;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
+import uz.greenstar.jolybell.repository.UserListByAdminSpecification;
 import uz.greenstar.jolybell.repository.UserRepository;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Optional;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,5 +69,30 @@ public class UserService implements UserDetailsService {
         userDTO.setPhoneNumber(optionalUser.get().getPhoneNumber());
         userDTO.setPatronymic(optionalUser.get().getPatronymic());
         return userDTO;
+    }
+
+    public PaginationResponse getListForAdmin(PaginationRequest request) {
+        Pageable pageable = PageRequest.of(request.getPage(), request.getLength());
+        Page<UserEntity> userEntityPage = userRepository.findAll(UserListByAdminSpecification.getFilteredPayments(request), pageable);
+
+        PaginationResponse response = new PaginationResponse();
+        response.setDraw(request.getDraw());
+
+        String pattern = "yyyy-MM-dd";
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
+
+
+        List<Object> userDTOList = userEntityPage.getContent().stream().map(user -> {
+            UserDTO userDTO = new UserDTO();
+            BeanUtils.copyProperties(user, userDTO);
+            userDTO.setPassword(null);
+            userDTO.setCreateDateTime(user.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            return userDTO;
+        }).collect(Collectors.toList());
+
+        response.setData(userDTOList);
+        response.setTotalCount((int) userEntityPage.getTotalElements());
+        response.setPages(userEntityPage.getTotalPages());
+        return response;
     }
 }
