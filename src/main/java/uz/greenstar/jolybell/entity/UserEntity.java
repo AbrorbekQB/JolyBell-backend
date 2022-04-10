@@ -26,6 +26,6 @@ public class UserEntity {
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime lastUpdateTime = LocalDateTime.now();
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @OneToMany(fetch = FetchType.EAGER)
     private List<RoleEntity> roleList = new ArrayList<>();
 }

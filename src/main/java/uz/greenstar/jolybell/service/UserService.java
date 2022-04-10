@@ -17,8 +17,10 @@ import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.api.pagination.PaginationRequest;
 import uz.greenstar.jolybell.api.pagination.PaginationResponse;
 import uz.greenstar.jolybell.dto.UserDTO;
+import uz.greenstar.jolybell.entity.RoleEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
+import uz.greenstar.jolybell.repository.RoleRepository;
 import uz.greenstar.jolybell.repository.UserListByAdminSpecification;
 import uz.greenstar.jolybell.repository.UserRepository;
 
@@ -33,6 +35,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -78,14 +81,11 @@ public class UserService implements UserDetailsService {
         PaginationResponse response = new PaginationResponse();
         response.setDraw(request.getDraw());
 
-        String pattern = "yyyy-MM-dd";
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat(pattern);
-
-
         List<Object> userDTOList = userEntityPage.getContent().stream().map(user -> {
             UserDTO userDTO = new UserDTO();
             BeanUtils.copyProperties(user, userDTO);
             userDTO.setPassword(null);
+            userDTO.setRoles(user.getRoleList().stream().map(RoleEntity::getName).collect(Collectors.toList()));
             userDTO.setCreateDateTime(user.getCreateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
             return userDTO;
         }).collect(Collectors.toList());
@@ -94,5 +94,19 @@ public class UserService implements UserDetailsService {
         response.setTotalCount((int) userEntityPage.getTotalElements());
         response.setPages(userEntityPage.getTotalPages());
         return response;
+    }
+
+    public void createAdmin(UserDTO dto) {
+        UserEntity userEntity = new UserEntity();
+        userEntity.setFirstname(dto.getFirstname());
+        userEntity.setLastname(dto.getLastname());
+        userEntity.setPatronymic(dto.getPatronymic());
+        userEntity.setPassword(dto.getPassword());
+        userEntity.setUsername(dto.getUsername());
+        userEntity.setPhoneNumber(dto.getPhoneNumber());
+
+        Optional<RoleEntity> roleOptional = roleRepository.findByName("ROLE_ADMIN");
+        userEntity.setRoleList(List.of(roleOptional.get()));
+        userRepository.save(userEntity);
     }
 }

@@ -21,4 +21,9 @@ public class AdminUserRestController {
     public PaginationResponse getList(@RequestBody PaginationRequest request) {
         return userService.getListForAdmin(request);
     }
+
+    @PostMapping("/create")
+    public void createAdmin(@RequestBody UserDTO dto){
+        userService.createAdmin(dto);
+    }
 }
