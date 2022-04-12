@@ -1,12 +1,11 @@
-package uz.greenstar.jolybell.api.pagination;
+package uz.greenstar.jolybell.api.filterForm;
 
 import lombok.Data;
 
 import java.util.List;
-import java.util.Map;
 
 @Data
-public class PaginationResponse {
+public class FilterResponse {
     private Integer draw;
     private Integer count;
     private Integer totalCount;

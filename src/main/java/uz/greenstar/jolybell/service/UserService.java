@@ -3,7 +3,6 @@ package uz.greenstar.jolybell.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -14,19 +13,16 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import uz.greenstar.jolybell.api.pagination.PaginationRequest;
-import uz.greenstar.jolybell.api.pagination.PaginationResponse;
+import uz.greenstar.jolybell.api.filterForm.FilterRequest;
+import uz.greenstar.jolybell.api.filterForm.FilterResponse;
 import uz.greenstar.jolybell.dto.UserDTO;
 import uz.greenstar.jolybell.entity.RoleEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
 import uz.greenstar.jolybell.repository.RoleRepository;
-import uz.greenstar.jolybell.repository.UserListByAdminSpecification;
+import uz.greenstar.jolybell.repository.spec.UserListByAdminSpecification;
 import uz.greenstar.jolybell.repository.UserRepository;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,11 +70,11 @@ public class UserService implements UserDetailsService {
         return userDTO;
     }
 
-    public PaginationResponse getListForAdmin(PaginationRequest request) {
+    public FilterResponse getListForAdmin(FilterRequest request) {
         Pageable pageable = PageRequest.of(request.getPage(), request.getLength());
         Page<UserEntity> userEntityPage = userRepository.findAll(UserListByAdminSpecification.getFilteredPayments(request), pageable);
 
-        PaginationResponse response = new PaginationResponse();
+        FilterResponse response = new FilterResponse();
         response.setDraw(request.getDraw());
 
         List<Object> userDTOList = userEntityPage.getContent().stream().map(user -> {

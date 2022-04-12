@@ -1,11 +1,11 @@
-package uz.greenstar.jolybell.api.pagination;
+package uz.greenstar.jolybell.api.filterForm;
 
 import lombok.Data;
 
 import java.util.Map;
 
 @Data
-public class PaginationRequest {
+public class FilterRequest {
     private Integer draw;
     private Integer page;
     private Integer length = 20;

@@ -1,9 +1,7 @@
-package uz.greenstar.jolybell.repository;
+package uz.greenstar.jolybell.repository.spec;
 
-import org.hibernate.mapping.Join;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.util.StringUtils;
-import uz.greenstar.jolybell.api.pagination.PaginationRequest;
+import uz.greenstar.jolybell.api.filterForm.FilterRequest;
 import uz.greenstar.jolybell.entity.UserEntity;
 
 import javax.persistence.criteria.Predicate;
@@ -12,7 +10,7 @@ import java.util.List;
 
 public class UserListByAdminSpecification {
 
-    public static Specification<UserEntity> getFilteredPayments(PaginationRequest request) {
+    public static Specification<UserEntity> getFilteredPayments(FilterRequest request) {
         return ((root, query, criteriaBuilder) -> {
             List<Predicate>predicateList = new ArrayList<>();
 
