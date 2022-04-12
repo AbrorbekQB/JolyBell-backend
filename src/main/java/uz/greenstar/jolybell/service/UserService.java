@@ -106,7 +106,7 @@ public class UserService implements UserDetailsService {
         userEntity.setPhoneNumber(dto.getPhoneNumber());
 
         Optional<RoleEntity> roleOptional = roleRepository.findByName("ROLE_ADMIN");
-        userEntity.setRoleList(List.of(roleOptional.get()));
+        userEntity.setRoleList(Set.of(roleOptional.get()));
         userRepository.save(userEntity);
     }
 }

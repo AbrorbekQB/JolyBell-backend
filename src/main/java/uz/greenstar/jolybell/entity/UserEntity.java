@@ -26,6 +26,9 @@ public class UserEntity {
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime lastUpdateTime = LocalDateTime.now();
 
-    @OneToMany(fetch = FetchType.EAGER)
-    private List<RoleEntity> roleList = new ArrayList<>();
+    @ManyToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @JoinTable(name = "user_role",
+            joinColumns = {@JoinColumn(name = "userId")},
+            inverseJoinColumns = {@JoinColumn(name = "roleId")})
+    private Set<RoleEntity> roleList = new HashSet<>();
 }
