@@ -36,3 +36,7 @@ logging:
 jwt:
   secret:
     key: secretkey
+
+image:
+  source:
+    base-url: D:/Institut/Diplom ishi/Angular/All/JolyBell/src/

@@ -12,7 +12,6 @@ import uz.greenstar.jolybell.service.AuthService;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin("http://localhost:4200")
 public class AuthRestController {
     private final AuthService authService;
 

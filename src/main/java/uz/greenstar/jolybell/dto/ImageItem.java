@@ -8,8 +8,4 @@ import java.util.UUID;
 public class ImageItem {
     private String id = UUID.randomUUID().toString();
     private String url;
-
-//    public ImageItem(String url) {
-//        this.url = url;
-//    }
 }

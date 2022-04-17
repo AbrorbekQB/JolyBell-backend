@@ -10,7 +10,6 @@ import uz.greenstar.jolybell.service.UserService;
 @RestController
 @RequestMapping("/admin/user")
 @RequiredArgsConstructor
-@CrossOrigin("http://localhost:4200")
 public class AdminUserRestController {
     private final UserService userService;
 

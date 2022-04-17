@@ -12,7 +12,6 @@ import uz.greenstar.jolybell.service.UserService;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-@CrossOrigin("http://localhost:4200")
 public class UserRestController {
     private final UserService userService;
 

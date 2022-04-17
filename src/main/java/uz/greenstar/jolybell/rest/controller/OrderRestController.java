@@ -11,7 +11,6 @@ import uz.greenstar.jolybell.service.OrderService;
 @RestController
 @RequestMapping("/order")
 @RequiredArgsConstructor
-@CrossOrigin("http://localhost:4200")
 public class OrderRestController {
     private final OrderService orderService;
 

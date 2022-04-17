@@ -10,7 +10,6 @@ import java.util.Map;
 @RestController
 @RequestMapping("/promocode")
 @RequiredArgsConstructor
-@CrossOrigin("http://localhost:4200")
 public class PromocodeRestController {
     private final PromocodeService promocodeService;
 

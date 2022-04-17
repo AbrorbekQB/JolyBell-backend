@@ -13,7 +13,6 @@ import uz.greenstar.jolybell.utils.validattion.PromoCodeValidation;
 @RestController
 @RequestMapping("/admin/promocode")
 @RequiredArgsConstructor
-@CrossOrigin("http://localhost:4200")
 public class AdminPromocodeRestController {
     private final PromocodeService promocodeService;
     private final PromoCodeValidation validation;
