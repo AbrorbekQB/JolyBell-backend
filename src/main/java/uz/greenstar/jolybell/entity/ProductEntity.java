@@ -35,10 +35,12 @@ import java.util.List;
 public class ProductEntity {
     @Id
     private String id;
+    @Column(unique = true)
     private String name;
     private BigDecimal cost;
     private long count;
     private String advice;
+    private Boolean active;
     private Boolean withSize;
     private LocalDateTime createdDate = LocalDateTime.now();
     private LocalDateTime lastUpdate = LocalDateTime.now();

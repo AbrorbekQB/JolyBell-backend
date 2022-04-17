@@ -15,6 +15,7 @@ public class ProductDTO {
     private String id;
     private String name;
     private BigDecimal cost;
+    private Boolean active;
     private List<ImageItem> imageItems;
     private List<DescriptionItem> descriptionItems;
     private long count;

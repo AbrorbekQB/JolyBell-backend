@@ -4,8 +4,12 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import uz.greenstar.jolybell.api.filterForm.FilterRequest;
+import uz.greenstar.jolybell.api.filterForm.FilterResponse;
 import uz.greenstar.jolybell.api.product.SizeItem;
 import uz.greenstar.jolybell.dto.CreateProductDTO;
 import uz.greenstar.jolybell.dto.DescriptionItem;
@@ -21,6 +25,7 @@ import uz.greenstar.jolybell.exception.ProductNotFoundException;
 import uz.greenstar.jolybell.repository.CategoryRepository;
 import uz.greenstar.jolybell.repository.ProductCountRepository;
 import uz.greenstar.jolybell.repository.ProductRepository;
+import uz.greenstar.jolybell.repository.spec.ProductListByAdminSpecification;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -138,9 +143,15 @@ public class ProductService {
         productRepository.save(productEntity);
     }
 
-    public List<ProductDTO> getAllList() {
-        List<ProductEntity> productEntityList = productRepository.findAll();
-        List<ProductDTO> productDTOList = productEntityList.stream().map(productEntity -> {
+    public FilterResponse getAllList(FilterRequest request) {
+        PageRequest pageRequest = PageRequest.of(request.getPage() - 1, request.getLength());
+
+        FilterResponse filterResponse = new FilterResponse();
+
+        Page<ProductEntity> productEntityPage = productRepository.findAll(
+                ProductListByAdminSpecification.getFilteredPayment(request),
+                pageRequest);
+        List<ProductDTO> productDTOList = productEntityPage.stream().map(productEntity -> {
             ProductDTO productDTO = new ProductDTO();
             BeanUtils.copyProperties(productEntity, productDTO);
             productDTO.setCategoryName(productEntity.getCategory().getName().toUpperCase());
@@ -149,7 +160,45 @@ public class ProductService {
 
             return productDTO;
         }).collect(Collectors.toList());
-        return productDTOList;
+
+        filterResponse.setData(productDTOList);
+        filterResponse.setTotalCount(productEntityPage.getTotalElements());
+        filterResponse.setPages(request.getPage());
+        return filterResponse;
+    }
+
+    public void add(ProductCountDTO dto) {
+        Optional<ProductCountEntity> productCountEntityOptional = productCountRepository.findById(dto.getId());
+        if (productCountEntityOptional.isEmpty())
+            throw new ItemNotFoundException("Can not found ProductCount");
+        ProductCountEntity productCount = productCountEntityOptional.get();
+        productCount.setCount(productCount.getCount() + Math.abs(dto.getCount()));
+        productCount.setLastUpdateDate(LocalDateTime.now());
+        productCountRepository.save(productCount);
+    }
+
+    public void changeActiveByAdmin(String id) {
+        Optional<ProductEntity> productEntityOptional = productRepository.findById(id);
+        if (productEntityOptional.isEmpty())
+            throw new ItemNotFoundException("Can not found category!");
+
+        productEntityOptional.get().setActive(!productEntityOptional.get().getActive());
+        productEntityOptional.get().setLastUpdate(LocalDateTime.now());
+        productRepository.save(productEntityOptional.get());
+    }
+
+    public ProductDTO getByAdmin(String productId) {
+        Optional<ProductEntity> productEntityOptional = productRepository.findById(productId);
+        if (productEntityOptional.isEmpty())
+            throw new ItemNotFoundException("Can not found product!");
+
+        ProductEntity productEntity = productEntityOptional.get();
+        ProductDTO productDTO = new ProductDTO();
+        BeanUtils.copyProperties(productEntity, productDTO);
+        productDTO.setCategoryName(productEntity.getCategory().getName().toUpperCase());
+        productDTO.setCreateDate(productEntity.getCreatedDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        sortProductCount(productDTO, productEntity);
+        return productDTO;
     }
 
     private void sortProductCount(ProductDTO productDTO, ProductEntity productEntity) {
@@ -175,15 +224,5 @@ public class ProductService {
                 productDTO.getProductCountList().add(productCountDTO);
             }
         });
-    }
-
-    public void add(ProductCountDTO dto) {
-        Optional<ProductCountEntity> productCountEntityOptional = productCountRepository.findById(dto.getId());
-        if (productCountEntityOptional.isEmpty())
-            throw new ItemNotFoundException("Can not found ProductCount");
-        ProductCountEntity productCount = productCountEntityOptional.get();
-        productCount.setCount(productCount.getCount() + Math.abs(dto.getCount()));
-        productCount.setLastUpdateDate(LocalDateTime.now());
-        productCountRepository.save(productCount);
     }
 }

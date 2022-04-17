@@ -3,9 +3,13 @@ package uz.greenstar.jolybell.service;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import uz.greenstar.jolybell.api.filterForm.FilterRequest;
+import uz.greenstar.jolybell.api.filterForm.FilterResponse;
 import uz.greenstar.jolybell.dto.category.CategoryDTO;
 import uz.greenstar.jolybell.dto.category.EditCategoryDTO;
 import uz.greenstar.jolybell.entity.CategoryEntity;
@@ -15,10 +19,7 @@ import uz.greenstar.jolybell.repository.CategoryRepository;
 import uz.greenstar.jolybell.repository.spec.CategoryListByAdminSpecification;
 
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -69,20 +70,32 @@ public class CategoryService {
         }).collect(Collectors.toList());
     }
 
-    public List<CategoryDTO> getListByAdmin(FilterRequest request) {
-        return categoryRepository.findAll(CategoryListByAdminSpecification.getFilteredPayment(request))
-                .stream().map(categoryEntity -> {
-                    CategoryDTO categoryDTO = new CategoryDTO();
-                    categoryDTO.setId(categoryEntity.getId());
-                    categoryDTO.setName(categoryEntity.getName());
-                    categoryDTO.setUrl(categoryEntity.getUrl());
-                    categoryDTO.setActive(categoryEntity.getActive());
-                    if (Objects.nonNull(categoryEntity.getUser()))
-                        categoryDTO.setUsername(categoryEntity.getUser().getUsername());
-                    if (Objects.nonNull(categoryEntity.getCreateDateTime()))
-                        categoryDTO.setCreateDate(categoryEntity.getCreateDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                    return categoryDTO;
-                }).collect(Collectors.toList());
+    public FilterResponse getListByAdmin(FilterRequest request) {
+
+        PageRequest pageRequest = PageRequest.of(request.getPage() - 1, request.getLength());
+
+        FilterResponse filterResponse = new FilterResponse();
+
+        Page<CategoryEntity> categoryEntityPage = categoryRepository.findAll(CategoryListByAdminSpecification.getFilteredPayment(request),
+                pageRequest);
+
+        List<CategoryDTO> categoryDTOList = categoryEntityPage.stream().map(categoryEntity -> {
+            CategoryDTO categoryDTO = new CategoryDTO();
+            categoryDTO.setId(categoryEntity.getId());
+            categoryDTO.setName(categoryEntity.getName());
+            categoryDTO.setUrl(categoryEntity.getUrl());
+            categoryDTO.setActive(categoryEntity.getActive());
+            if (Objects.nonNull(categoryEntity.getUser()))
+                categoryDTO.setUsername(categoryEntity.getUser().getUsername());
+            if (Objects.nonNull(categoryEntity.getCreateDateTime()))
+                categoryDTO.setCreateDate(categoryEntity.getCreateDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            return categoryDTO;
+        }).collect(Collectors.toList());
+
+        filterResponse.setData(categoryDTOList);
+        filterResponse.setTotalCount(categoryEntityPage.getTotalElements());
+        filterResponse.setPages(request.getPage());
+        return filterResponse;
     }
 
     public void changeActiveByAdmin(String id) {

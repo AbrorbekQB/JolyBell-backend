@@ -6,9 +6,8 @@ import java.util.List;
 
 @Data
 public class FilterResponse {
-    private Integer draw;
     private Integer count;
-    private Integer totalCount;
+    private Long totalCount;
     private Integer pages;
-    private List<Object> data;
+    private List<?> data;
 }

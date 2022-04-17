@@ -6,8 +6,7 @@ import java.util.Map;
 
 @Data
 public class FilterRequest {
-    private Integer draw;
     private Integer page;
-    private Integer length = 20;
+    private Integer length = 10;
     private Map<String, String> filterData;
 }

@@ -75,7 +75,6 @@ public class UserService implements UserDetailsService {
         Page<UserEntity> userEntityPage = userRepository.findAll(UserListByAdminSpecification.getFilteredPayments(request), pageable);
 
         FilterResponse response = new FilterResponse();
-        response.setDraw(request.getDraw());
 
         List<Object> userDTOList = userEntityPage.getContent().stream().map(user -> {
             UserDTO userDTO = new UserDTO();
@@ -87,7 +86,7 @@ public class UserService implements UserDetailsService {
         }).collect(Collectors.toList());
 
         response.setData(userDTOList);
-        response.setTotalCount((int) userEntityPage.getTotalElements());
+        response.setTotalCount(userEntityPage.getTotalElements());
         response.setPages(userEntityPage.getTotalPages());
         return response;
     }
