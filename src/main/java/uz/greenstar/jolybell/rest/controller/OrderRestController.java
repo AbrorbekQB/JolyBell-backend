@@ -24,6 +24,11 @@ public class OrderRestController {
         orderService.update(orderId, orderItem);
     }
 
+    @GetMapping("/amount/{id}")
+    public String amount(@PathVariable("id") String id){
+        return orderService.getAmount(id);
+    }
+
     @GetMapping(path = "/{id}")
     public OrderDTO get(@PathVariable("id") String id) {
         return orderService.getById(id, OrderStatus.PENDING);

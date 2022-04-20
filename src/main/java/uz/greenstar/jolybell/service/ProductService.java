@@ -2,7 +2,6 @@ package uz.greenstar.jolybell.service;
 
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,8 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import uz.greenstar.jolybell.api.filterForm.FilterRequest;
 import uz.greenstar.jolybell.api.filterForm.FilterResponse;
-import uz.greenstar.jolybell.api.product.SizeItem;
-import uz.greenstar.jolybell.dto.CreateProductDTO;
+import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.DescriptionItem;
 import uz.greenstar.jolybell.dto.ImageItem;
 import uz.greenstar.jolybell.dto.ProductCountDTO;
@@ -28,7 +26,6 @@ import uz.greenstar.jolybell.repository.ProductRepository;
 import uz.greenstar.jolybell.repository.spec.ProductListByAdminSpecification;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -82,14 +79,26 @@ public class ProductService {
         return productEntity.getId();
     }
 
-    public List<CreateProductDTO> getList(String categoryName) {
+    public List<ProductDTO> getList(String categoryName) {
 
         List<ProductEntity> productEntityList = productRepository.findAllByCategoryUrl(categoryName);
-        return productEntityList.stream().map(productEntity -> {
-            CreateProductDTO createProductDTO = new CreateProductDTO();
-            BeanUtils.copyProperties(productEntity, createProductDTO);
-            createProductDTO.setCategoryId(productEntity.getCategory().getId());
-            return createProductDTO;
+        return productEntityList.stream().filter(product -> {
+            List<ProductCountEntity> productCountEntityList = productCountRepository.findAllByProduct(product);
+            productCountEntityList.forEach(productCountEntity -> {
+                product.setCount(product.getCount() + productCountEntity.getCount());
+            });
+            if (product.getCount() > 0 && product.getActive())
+                return true;
+            return false;
+        }).map(productEntity -> {
+            ProductDTO productDTO = new ProductDTO();
+
+            productDTO.setCost(productEntity.getCost());
+            productDTO.setName(productEntity.getName());
+            productDTO.setId(productEntity.getId());
+            productDTO.setImageItems(productEntity.getImageItems());
+
+            return productDTO;
         }).collect(Collectors.toList());
     }
 
@@ -106,11 +115,44 @@ public class ProductService {
 //        }).collect(Collectors.toList());
 //    }
 
-    public CreateProductDTO getById(String id) {
-        CreateProductDTO createProductDTO = new CreateProductDTO();
-        BeanUtils.copyProperties(productRepository.findById(id).get(), createProductDTO);
-//        productDTO.setSize(new ArrayList<>());
-        return createProductDTO;
+    public ProductDTO getById(String id) {
+        ProductDTO productDTO = new ProductDTO();
+        Optional<ProductEntity> productEntityOptional = productRepository.findById(id);
+        ProductEntity productEntity = productEntityOptional.get();
+
+        productDTO.setId(productEntity.getId());
+        productDTO.setAdvice(productEntity.getAdvice());
+        productDTO.setImageItems(productEntity.getImageItems());
+        productDTO.setCost(productEntity.getCost());
+        productDTO.setName(productEntity.getName());
+        productDTO.setDescriptionItems(productEntity.getDescriptionItems());
+
+        List<ProductCountEntity> productCountEntityList = productCountRepository.findAllByProduct(productEntityOptional.get());
+        productDTO.setProductCountList(productCountEntityList.stream().filter(productCountEntity -> {
+            if (productCountEntity.getCount() > 0)
+                return true;
+            return false;
+        }).map(productCountEntity -> {
+            ProductCountDTO productCountDTO = new ProductCountDTO();
+            BeanUtils.copyProperties(productCountEntity, productCountDTO);
+            return productCountDTO;
+        }).collect(Collectors.toList()));
+
+        productDTO.setProductCountList(sortProductCountList(productDTO.getProductCountList()));
+
+        return productDTO;
+    }
+
+    private List<ProductCountDTO> sortProductCountList(List<ProductCountDTO> productCountList) {
+        Map<String, ProductCountDTO> productCountDTOMap = productCountList.stream().
+                collect(Collectors.toMap(ProductCountDTO::getSize, dto -> dto));
+        List<ProductCountDTO> productCountDTOS = new ArrayList<>();
+        sizeList.forEach(s -> {
+            if (productCountDTOMap.containsKey(s)) {
+                productCountDTOS.add(productCountDTOMap.get(s));
+            }
+        });
+        return productCountDTOS;
     }
 
     public void updateImage(String productId, List<MultipartFile> files) {

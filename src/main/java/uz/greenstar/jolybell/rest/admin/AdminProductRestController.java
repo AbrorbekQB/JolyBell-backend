@@ -5,7 +5,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import uz.greenstar.jolybell.api.filterForm.FilterRequest;
 import uz.greenstar.jolybell.api.filterForm.FilterResponse;
-import uz.greenstar.jolybell.dto.CreateProductDTO;
+import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.ProductCountDTO;
 import uz.greenstar.jolybell.dto.product.ProductDTO;
 import uz.greenstar.jolybell.service.ProductService;

@@ -1,4 +1,4 @@
-package uz.greenstar.jolybell.dto;
+package uz.greenstar.jolybell.dto.product;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

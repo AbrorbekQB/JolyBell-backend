@@ -2,7 +2,8 @@ package uz.greenstar.jolybell.rest.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import uz.greenstar.jolybell.dto.CreateProductDTO;
+import uz.greenstar.jolybell.dto.product.CreateProductDTO;
+import uz.greenstar.jolybell.dto.product.ProductDTO;
 import uz.greenstar.jolybell.service.ProductService;
 
 import java.util.List;
@@ -19,12 +20,12 @@ public class ProductRestController {
 //    }
 
     @GetMapping("/get/{id}")
-    public CreateProductDTO getById(@PathVariable("id") String id) {
+    public ProductDTO getById(@PathVariable("id") String id) {
         return productService.getById(id);
     }
 
     @GetMapping("/list/{categoryName}")
-    public List<CreateProductDTO> getList(@PathVariable("categoryName") String categoryName) {
+    public List<ProductDTO> getList(@PathVariable("categoryName") String categoryName) {
         return productService.getList(categoryName);
     }
 }

@@ -8,12 +8,15 @@ import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.OrderDTO;
 import uz.greenstar.jolybell.entity.OrderEntity;
+import uz.greenstar.jolybell.entity.ProductCountEntity;
 import uz.greenstar.jolybell.entity.ProductEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
+import uz.greenstar.jolybell.exception.product.ProductAlreadySoldException;
 import uz.greenstar.jolybell.repository.OrderRepository;
+import uz.greenstar.jolybell.repository.ProductCountRepository;
 import uz.greenstar.jolybell.repository.ProductRepository;
 import uz.greenstar.jolybell.repository.UserRepository;
 
@@ -28,9 +31,21 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
+    private final ProductCountRepository productCountRepository;
 
     public String create(OrderItem orderItem) {
         OrderEntity orderEntity = new OrderEntity();
+
+        Optional<ProductCountEntity> productCountEntityOptional = productCountRepository.findByProductAndSize(productRepository.getById(orderItem.getProductId()), orderItem.getSize());
+        ProductCountEntity productCountEntity = productCountEntityOptional.get();
+
+        if (productCountEntity.getCount() <= 0)
+            throw new ProductAlreadySoldException();
+
+        if (productCountEntity.getCount() < orderItem.getCount())
+            orderItem.setCount(productCountEntity.getCount());
+
+        orderItem.setProductCountId(productCountEntity.getId());
         orderEntity.getOrderItems().put(orderItem.getProductId(), List.of(orderItem));
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
@@ -57,7 +72,19 @@ public class OrderService {
 
     private Map<String, List<OrderItem>> updateOrder(Map<String, List<OrderItem>> orderItems, OrderItem orderItem) {
 
+        Map<String, ProductCountEntity> productCountEntityMap = productCountRepository.findAllByProduct(productRepository.getById(orderItem.getProductId()))
+                .stream().collect(Collectors.toMap(ProductCountEntity::getSize, o -> o));
+
         if (!orderItems.containsKey(orderItem.getProductId())) {
+            ProductCountEntity productCountEntity = productCountEntityMap.get(orderItem.getSize());
+
+            if (productCountEntity.getCount() <= 0)
+                throw new ProductAlreadySoldException();
+
+            if (productCountEntity.getCount() < orderItem.getCount())
+                orderItem.setCount(productCountEntity.getCount());
+
+            orderItem.setProductCountId(productCountEntity.getId());
             orderItems.put(orderItem.getProductId(), List.of(orderItem));
             return orderItems;
         }
@@ -66,13 +93,31 @@ public class OrderService {
         List<String> sizeList = currentOrderItems.stream().map(OrderItem::getSize).collect(Collectors.toList());
 
         if (!sizeList.contains(orderItem.getSize())) {
+            ProductCountEntity productCountEntity = productCountEntityMap.get(orderItem.getSize());
+            if (productCountEntity.getCount() <= 0)
+                throw new ProductAlreadySoldException();
+
+            if (productCountEntity.getCount() < orderItem.getCount())
+                orderItem.setCount(productCountEntity.getCount());
+
+            orderItem.setProductCountId(productCountEntity.getId());
             orderItems.get(orderItem.getProductId()).add(orderItem);
             return orderItems;
         }
 
         currentOrderItems.forEach(currentOrderItem -> {
             if (currentOrderItem.getSize().equals(orderItem.getSize())) {
-                currentOrderItem.setCount(currentOrderItem.getCount() + orderItem.getCount());
+                ProductCountEntity productCountEntity = productCountEntityMap.get(orderItem.getSize());
+
+                if (productCountEntity.getCount() <= 0)
+                    throw new ProductAlreadySoldException();
+
+                long totalCount = currentOrderItem.getCount() + orderItem.getCount();
+
+                if (productCountEntity.getCount() < totalCount)
+                    currentOrderItem.setCount(productCountEntity.getCount());
+                else
+                    currentOrderItem.setCount(totalCount);
             }
         });
 
@@ -149,6 +194,11 @@ public class OrderService {
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderEntity.setUser(userOptional.get());
         orderRepository.save(orderEntity);
+    }
+
+    public String getAmount(String id) {
+        Optional<OrderEntity> orderEntityOptional = orderRepository.findById(id);
+        return orderEntityOptional.get().getTotalAmount().toString();
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);
