@@ -6,6 +6,7 @@ import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.order.OrderGetDTO;
 import uz.greenstar.jolybell.dto.order.OrderDTO;
+import uz.greenstar.jolybell.dto.order.CheckoutOrderDTO;
 import uz.greenstar.jolybell.service.OrderService;
 
 @RestController
@@ -35,7 +36,7 @@ public class OrderRestController {
     }
 
     @GetMapping(path = "/cancel/{id}")
-    public void cancel(@PathVariable("id") String id){
+    public void cancel(@PathVariable("id") String id) {
         orderService.cancelOrder(id);
     }
 
@@ -47,6 +48,11 @@ public class OrderRestController {
     @GetMapping(path = "/confirm/{orderId}")
     public boolean checkout(@PathVariable("orderId") String orderId) {
         return orderService.confirm(orderId);
+    }
+
+    @PostMapping(path = "/checkout")
+    public boolean proceed(@RequestBody CheckoutOrderDTO checkoutOrderDTO) {
+        return orderService.checkout(checkoutOrderDTO);
     }
 //
 //    @GetMapping("/get/{id}")

@@ -5,8 +5,8 @@ import lombok.Data;
 import org.hibernate.annotations.Type;
 import org.hibernate.annotations.TypeDef;
 import org.hibernate.annotations.TypeDefs;
-import uz.greenstar.jolybell.api.order.AddressItem;
 import uz.greenstar.jolybell.api.order.OrderItem;
+import uz.greenstar.jolybell.dto.user.UserDTO;
 import uz.greenstar.jolybell.enums.OrderState;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.enums.PaymentType;
@@ -14,7 +14,10 @@ import uz.greenstar.jolybell.enums.PaymentType;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Data
 @Table
@@ -26,6 +29,9 @@ public class OrderEntity {
     @Id
     private String id = UUID.randomUUID().toString();
     private BigDecimal totalAmount = BigDecimal.ZERO;
+    private Boolean fullReserved;
+    private LocalDateTime bookedDateTime;
+    private String note;
     private LocalDateTime createdDateTime = LocalDateTime.now();
     private LocalDateTime lastUpdateTime = LocalDateTime.now();
 
@@ -42,7 +48,7 @@ public class OrderEntity {
 
     @Type(type = "jsonb")
     @Column(columnDefinition = "jsonb")
-    private List<AddressItem> addressItem = new ArrayList<>();
+    private UserDTO receiverDetails;
 
     @ManyToOne(fetch = FetchType.LAZY)
     private UserEntity user;

@@ -8,6 +8,7 @@ import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.order.OrderGetDTO;
 import uz.greenstar.jolybell.dto.order.OrderDTO;
+import uz.greenstar.jolybell.dto.order.CheckoutOrderDTO;
 import uz.greenstar.jolybell.entity.*;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
@@ -17,8 +18,10 @@ import uz.greenstar.jolybell.repository.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Service
@@ -127,6 +130,7 @@ public class OrderService {
         if (orderOptional.isEmpty())
             throw new OrderNotFoundException("Order not found!");
 
+        AtomicReference<Boolean> fullReserver = new AtomicReference<>(Boolean.TRUE);
         OrderEntity orderEntity = orderOptional.get();
         OrderDTO orderDTO = new OrderDTO();
         orderDTO.setId(orderEntity.getId());
@@ -145,10 +149,15 @@ public class OrderService {
         orderEntity.getOrderItems().forEach((productId, orderItems1) -> {
             orderItems1.forEach(orderItem -> {
                 orderItem.setUrl(map.get(orderItem.getProductId()));
+                if (orderItem.getCount() != orderItem.getReservedCount())
+                    fullReserver.set(Boolean.FALSE);
             });
             orderItems.addAll(orderItems1);
         });
         orderDTO.setOrderItems(orderItems);
+        orderDTO.setFullReserved(fullReserver.get());
+        if (Objects.nonNull(orderEntity.getBookedDateTime()))
+            orderDTO.setOrderLifeTime(orderEntity.getBookedDateTime().atZone(ZoneId.systemDefault()).toEpochSecond() - LocalDateTime.now().atZone(ZoneId.systemDefault()).toEpochSecond());
         return orderDTO;
     }
 
@@ -178,6 +187,7 @@ public class OrderService {
 
     public boolean confirm(String orderId) {
         AtomicBoolean fullReserved = new AtomicBoolean(true);
+        AtomicReference<BigDecimal> finaltotalAmount = new AtomicReference<>(BigDecimal.ZERO);
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty())
@@ -199,13 +209,18 @@ public class OrderService {
                     fullReserved.set(false);
                     orderItem.setReservedCount(reservedCount);
                 }
+
+                finaltotalAmount.set(finaltotalAmount.get().add(orderItem.getCost().multiply(BigDecimal.valueOf(reservedCount))));
             });
         });
 
         orderEntity.setStatus(OrderStatus.CONFIRM);
         orderEntity.setTotalAmount(orderEntity.getTotalAmount().add(BigDecimal.valueOf(5.0)));
         orderEntity.setLastUpdateTime(LocalDateTime.now());
+        orderEntity.setFullReserved(fullReserved.get());
+        orderEntity.setBookedDateTime(LocalDateTime.now().plusMinutes(5));
         orderEntity.setUser(userOptional.get());
+        orderEntity.setTotalAmount(finaltotalAmount.get());
         orderRepository.save(orderEntity);
 
         return fullReserved.get();
@@ -234,6 +249,20 @@ public class OrderService {
 
         List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findAllByOrderIdAndReturnedFalse(orderEntity.getId());
         productService.returnReservedProduct(reservedProductEntityList);
+    }
+
+    public boolean checkout(CheckoutOrderDTO checkout) {
+        Optional<OrderEntity> optionalOrder = orderRepository.findById(checkout.getOrderId());
+        if (optionalOrder.isEmpty() || !optionalOrder.get().getStatus().equals(OrderStatus.CONFIRM))
+            return false;
+
+        OrderEntity orderEntity = optionalOrder.get();
+        orderEntity.setNote(checkout.getNote());
+        orderEntity.setReceiverDetails(checkout.getUser());
+        orderEntity.setStatus(OrderStatus.CHECKOUT);
+        orderEntity.setLastUpdateTime(LocalDateTime.now());
+        orderRepository.save(orderEntity);
+        return true;
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);
