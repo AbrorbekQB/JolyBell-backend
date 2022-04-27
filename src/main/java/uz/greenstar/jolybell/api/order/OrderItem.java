@@ -16,6 +16,7 @@ public class OrderItem {
     private String name = "Abror";
     private String url;
     private long count;
+    private long reservedCount = 0;
     private BigDecimal cost = BigDecimal.ZERO;
     private String size;
 }

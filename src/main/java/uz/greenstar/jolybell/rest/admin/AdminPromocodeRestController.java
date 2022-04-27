@@ -24,9 +24,4 @@ public class AdminPromocodeRestController {
             throw new ValidationException(validatorError);
         promocodeService.create(dto);
     }
-
-    @ExceptionHandler({ValidationException.class})
-    public ResponseEntity<?> handleException(ValidationException ex) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getValidatorError());
-    }
 }

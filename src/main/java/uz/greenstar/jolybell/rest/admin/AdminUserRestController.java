@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import uz.greenstar.jolybell.api.filterForm.FilterRequest;
 import uz.greenstar.jolybell.api.filterForm.FilterResponse;
-import uz.greenstar.jolybell.dto.UserDTO;
+import uz.greenstar.jolybell.dto.user.UserDTO;
 import uz.greenstar.jolybell.service.UserService;
 
 @RestController

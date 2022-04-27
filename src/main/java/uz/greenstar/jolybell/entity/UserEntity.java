@@ -23,6 +23,13 @@ public class UserEntity {
     private String patronymic = "";
     private String password;
     private String phoneNumber = "";
+
+    @OneToOne
+    private ProvinceEntity province;
+    @OneToOne
+    private DistrictEntity district;
+    private String address;
+
     private LocalDateTime createTime = LocalDateTime.now();
     private LocalDateTime lastUpdateTime = LocalDateTime.now();
 

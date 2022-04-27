@@ -6,23 +6,19 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
-import uz.greenstar.jolybell.dto.OrderDTO;
-import uz.greenstar.jolybell.entity.OrderEntity;
-import uz.greenstar.jolybell.entity.ProductCountEntity;
-import uz.greenstar.jolybell.entity.ProductEntity;
-import uz.greenstar.jolybell.entity.UserEntity;
+import uz.greenstar.jolybell.dto.order.OrderGetDTO;
+import uz.greenstar.jolybell.dto.order.OrderDTO;
+import uz.greenstar.jolybell.entity.*;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
 import uz.greenstar.jolybell.exception.product.ProductAlreadySoldException;
-import uz.greenstar.jolybell.repository.OrderRepository;
-import uz.greenstar.jolybell.repository.ProductCountRepository;
-import uz.greenstar.jolybell.repository.ProductRepository;
-import uz.greenstar.jolybell.repository.UserRepository;
+import uz.greenstar.jolybell.repository.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,6 +28,8 @@ public class OrderService {
     private final UserRepository userRepository;
     private final ProductRepository productRepository;
     private final ProductCountRepository productCountRepository;
+    private final ReservedProductRepository reservedProductRepository;
+    private final ProductService productService;
 
     public String create(OrderItem orderItem) {
         OrderEntity orderEntity = new OrderEntity();
@@ -124,8 +122,8 @@ public class OrderService {
         return orderItems;
     }
 
-    public OrderDTO getById(String id, OrderStatus status) {
-        Optional<OrderEntity> orderOptional = orderRepository.findByIdAndStatus(id, status);
+    public OrderDTO getById(OrderGetDTO getOrderDTO) {
+        Optional<OrderEntity> orderOptional = orderRepository.findByIdAndStatus(getOrderDTO.getId(), getOrderDTO.getStatus());
         if (orderOptional.isEmpty())
             throw new OrderNotFoundException("Order not found!");
 
@@ -178,27 +176,64 @@ public class OrderService {
         orderRepository.save(optionalOrder.get());
     }
 
-    public void confirm(String orderId) {
+    public boolean confirm(String orderId) {
+        AtomicBoolean fullReserved = new AtomicBoolean(true);
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty())
             throw new UsernameNotFoundException("User not found!");
 
         Optional<OrderEntity> orderOptional = orderRepository.findById(orderId);
-        if (orderOptional.isEmpty())
+        if (orderOptional.isEmpty() || !orderOptional.get().getStatus().equals(OrderStatus.PENDING))
             throw new OrderNotFoundException("Order not found!");
 
         OrderEntity orderEntity = orderOptional.get();
+        orderEntity.setUser(userOptional.get());
+
+        orderEntity.getOrderItems().forEach((productId, orderItems) -> {
+            orderItems.forEach(orderItem -> {
+                Long reservedCount = productService.reservingProduct(orderItem.getProductCountId(), orderItem.getCount(), orderEntity.getId());
+                if (reservedCount.equals(orderItem.getCount()))
+                    orderItem.setReservedCount(orderItem.getCount());
+                else {
+                    fullReserved.set(false);
+                    orderItem.setReservedCount(reservedCount);
+                }
+            });
+        });
+
         orderEntity.setStatus(OrderStatus.CONFIRM);
         orderEntity.setTotalAmount(orderEntity.getTotalAmount().add(BigDecimal.valueOf(5.0)));
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderEntity.setUser(userOptional.get());
         orderRepository.save(orderEntity);
+
+        return fullReserved.get();
     }
 
     public String getAmount(String id) {
         Optional<OrderEntity> orderEntityOptional = orderRepository.findById(id);
         return orderEntityOptional.get().getTotalAmount().toString();
+    }
+
+    public void cancelOrder(String id) {
+        Optional<OrderEntity> optionalOrder = orderRepository.findById(id);
+        if (optionalOrder.isEmpty() || optionalOrder.get().getStatus().equals(OrderStatus.PENDING))
+            return;
+
+        OrderEntity orderEntity = optionalOrder.get();
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        if (!orderEntity.getUser().getUsername().equals(username)) {
+            return;
+        }
+
+        orderEntity.setStatus(OrderStatus.CANCELED);
+        orderEntity.setLastUpdateTime(LocalDateTime.now());
+        orderRepository.save(orderEntity);
+
+        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findAllByOrderIdAndReturnedFalse(orderEntity.getId());
+        productService.returnReservedProduct(reservedProductEntityList);
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);

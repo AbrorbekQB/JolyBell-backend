@@ -1,4 +1,4 @@
-package uz.greenstar.jolybell.dto;
+package uz.greenstar.jolybell.dto.user;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;
@@ -20,4 +20,8 @@ public class UserDTO {
     private String password;
     private String phoneNumber;
     private String createDateTime;
+
+    private String province;
+    private String district;
+    private String address;
 }

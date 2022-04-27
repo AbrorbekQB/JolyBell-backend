@@ -1,28 +1,29 @@
 package uz.greenstar.jolybell.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import uz.greenstar.jolybell.api.filterForm.FilterRequest;
 import uz.greenstar.jolybell.api.filterForm.FilterResponse;
-import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.DescriptionItem;
 import uz.greenstar.jolybell.dto.ImageItem;
 import uz.greenstar.jolybell.dto.ProductCountDTO;
+import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.product.ProductDTO;
-import uz.greenstar.jolybell.entity.CategoryEntity;
-import uz.greenstar.jolybell.entity.ProductCountEntity;
-import uz.greenstar.jolybell.entity.ProductEntity;
+import uz.greenstar.jolybell.entity.*;
+import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.exception.CategoryNotFoundException;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
-import uz.greenstar.jolybell.repository.CategoryRepository;
-import uz.greenstar.jolybell.repository.ProductCountRepository;
-import uz.greenstar.jolybell.repository.ProductRepository;
+import uz.greenstar.jolybell.repository.*;
 import uz.greenstar.jolybell.repository.spec.ProductListByAdminSpecification;
 
 import java.io.File;
@@ -32,18 +33,16 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ProductService {
-
-    @Autowired
-    private Environment environment;
-
-    @Autowired
-    private ProductRepository productRepository;
-    @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private ProductCountRepository productCountRepository;
+    private final Environment environment;
+    private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
+    private final ProductCountRepository productCountRepository;
+    private final ReservedProductRepository reservedProductRepository;
 
     List<String> sizeList = Arrays.asList("xs", "x", "m", "l", "xl", "2xl", "3xl");
 
@@ -243,6 +242,42 @@ public class ProductService {
         return productDTO;
     }
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Long reservingProduct(String productCountId, Long count, String orderId) {
+        Long reservedCount = 0L;
+        Optional<ProductCountEntity> productCountEntityOptional = productCountRepository.findById(productCountId);
+        if (productCountEntityOptional.isEmpty() || productCountEntityOptional.get().getCount().equals(0L))
+            return reservedCount;
+
+        ProductCountEntity productCount = productCountEntityOptional.get();
+        if (productCount.getCount() >= count) {
+            productCount.setCount(productCount.getCount() - count);
+            productCountRepository.save(productCount);
+
+            ReservedProductEntity reservedProductEntity = new ReservedProductEntity();
+            reservedProductEntity.setProductCountId(productCount.getId());
+            reservedProductEntity.setCount(count);
+            reservedProductEntity.setSize(productCount.getSize());
+            reservedProductEntity.setOrderId(orderId);
+
+            reservedProductRepository.save(reservedProductEntity);
+            return count;
+        }
+        reservedCount = productCount.getCount();
+
+        productCount.setCount(productCount.getCount() - reservedCount);
+        productCountRepository.save(productCount);
+
+        ReservedProductEntity reservedProductEntity = new ReservedProductEntity();
+        reservedProductEntity.setProductCountId(productCount.getId());
+        reservedProductEntity.setCount(reservedCount);
+        reservedProductEntity.setSize(productCount.getSize());
+        reservedProductEntity.setOrderId(orderId);
+
+        reservedProductRepository.save(reservedProductEntity);
+        return reservedCount;
+    }
+
     private void sortProductCount(ProductDTO productDTO, ProductEntity productEntity) {
         List<ProductCountEntity> productCountEntityList = productCountRepository.findAllByProduct(productEntity);
 
@@ -264,6 +299,29 @@ public class ProductService {
                 ProductCountDTO productCountDTO = new ProductCountDTO();
                 BeanUtils.copyProperties(sorting.get(size), productCountDTO);
                 productDTO.getProductCountList().add(productCountDTO);
+            }
+        });
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void returnReservedProduct(List<ReservedProductEntity> reservedProductEntityList) {
+        if (!reservedProductEntityList.isEmpty())
+            log.info("returning start. count = " + reservedProductEntityList.size() + " time: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        reservedProductEntityList.forEach(reservedProductEntity -> {
+            Optional<ProductCountEntity> productCountEntityOptional = productCountRepository.findById(reservedProductEntity.getProductCountId());
+            if (productCountEntityOptional.isPresent()) {
+                productCountEntityOptional.get().setCount(productCountEntityOptional.get().getCount() + reservedProductEntity.getCount());
+                productCountEntityOptional.get().setLastUpdateDate(LocalDateTime.now());
+                productCountRepository.save(productCountEntityOptional.get());
+            }
+            reservedProductEntity.setReturned(true);
+            reservedProductEntity.setLastUpdateDate(LocalDateTime.now());
+            reservedProductRepository.save(reservedProductEntity);
+
+            Optional<OrderEntity> optionalOrder = orderRepository.findByIdAndStatusNotIn(reservedProductEntity.getOrderId(), Arrays.asList(OrderStatus.PENDING, OrderStatus.CANCELED, OrderStatus.CANCELED_BY_EXPIRED));
+            if (optionalOrder.isPresent()) {
+                optionalOrder.get().setStatus(OrderStatus.CANCELED_BY_EXPIRED);
+                orderRepository.save(optionalOrder.get());
             }
         });
     }

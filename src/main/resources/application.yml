@@ -27,7 +27,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQL95Dialect
         temp:
           use_jdbc_metadata_defaults: false
-    show-sql: true
+    show-sql: false
   sql:
     init:
       encoding: UTF-8

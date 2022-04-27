@@ -6,10 +6,13 @@ import uz.greenstar.jolybell.entity.PromoCodeEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.enums.OrderStatus;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface OrderRepository extends JpaRepository<OrderEntity, String> {
     Optional<OrderEntity> findByIdAndStatus(String id, OrderStatus status);
 
     Optional<OrderEntity> findByUserAndPromoCode(UserEntity user, PromoCodeEntity promoCode);
+
+    Optional<OrderEntity> findByIdAndStatusNotIn(String orderId, List<OrderStatus> list);
 }

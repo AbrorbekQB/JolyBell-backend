@@ -1,10 +1,10 @@
 package uz.greenstar.jolybell.api.auth;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 @Data
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class RegistrationRequest {
     private String username;
     private String password;
