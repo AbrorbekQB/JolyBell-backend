@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
+import uz.greenstar.jolybell.dto.order.ChoicePaymentDTO;
 import uz.greenstar.jolybell.dto.order.OrderGetDTO;
 import uz.greenstar.jolybell.dto.order.OrderDTO;
 import uz.greenstar.jolybell.dto.order.CheckoutOrderDTO;
@@ -53,6 +54,11 @@ public class OrderRestController {
     @PostMapping(path = "/checkout")
     public boolean proceed(@RequestBody CheckoutOrderDTO checkoutOrderDTO) {
         return orderService.checkout(checkoutOrderDTO);
+    }
+
+    @PostMapping(path = "/choice-payment")
+    public void choicePayment(@RequestBody ChoicePaymentDTO dto) {
+        orderService.choicePayment(dto);
     }
 //
 //    @GetMapping("/get/{id}")

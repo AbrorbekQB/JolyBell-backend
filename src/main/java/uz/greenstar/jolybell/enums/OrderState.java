@@ -1,5 +1,5 @@
 package uz.greenstar.jolybell.enums;
 
 public enum OrderState {
-    PENDING, NONE
+    PENDING, USER_FINISH, NONE
 }

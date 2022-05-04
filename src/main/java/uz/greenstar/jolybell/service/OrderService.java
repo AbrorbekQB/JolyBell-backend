@@ -6,11 +6,13 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
+import uz.greenstar.jolybell.dto.order.ChoicePaymentDTO;
 import uz.greenstar.jolybell.dto.order.OrderGetDTO;
 import uz.greenstar.jolybell.dto.order.OrderDTO;
 import uz.greenstar.jolybell.dto.order.CheckoutOrderDTO;
 import uz.greenstar.jolybell.entity.*;
 import uz.greenstar.jolybell.enums.OrderStatus;
+import uz.greenstar.jolybell.enums.PaymentType;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
 import uz.greenstar.jolybell.exception.product.ProductAlreadySoldException;
@@ -218,7 +220,7 @@ public class OrderService {
         orderEntity.setTotalAmount(orderEntity.getTotalAmount().add(BigDecimal.valueOf(5.0)));
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderEntity.setFullReserved(fullReserved.get());
-        orderEntity.setBookedDateTime(LocalDateTime.now().plusMinutes(5));
+        orderEntity.setBookedDateTime(LocalDateTime.now().plusMinutes(10));
         orderEntity.setUser(userOptional.get());
         orderEntity.setTotalAmount(finaltotalAmount.get());
         orderRepository.save(orderEntity);
@@ -263,6 +265,19 @@ public class OrderService {
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderRepository.save(orderEntity);
         return true;
+    }
+
+    public void choicePayment(ChoicePaymentDTO dto) {
+        Optional<OrderEntity> optionalOrder = orderRepository.findById(dto.getOrderId());
+        if (optionalOrder.isEmpty())
+            throw new OrderNotFoundException("Order not found!");
+
+        OrderEntity orderEntity = optionalOrder.get();
+        orderEntity.setTotalAmount(orderEntity.getTotalAmount().add(new BigDecimal(5)));
+        orderEntity.setStatus(OrderStatus.CHOICE_PAYMENT);
+        orderEntity.setPaymentType(PaymentType.PAYSYS);
+        orderEntity.setLastUpdateTime(LocalDateTime.now());
+        orderRepository.save(orderEntity);
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);

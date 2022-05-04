@@ -40,3 +40,9 @@ jwt:
 image:
   source:
     base-url: D:/Institut/Diplom ishi/Angular/All/JolyBell/src/
+
+paysys:
+  url: https://paysys.uz/gateway
+  serviceId: paySysServiceId
+  secretKey: paySysSecretKey
+  vendorId: paySysVendorId

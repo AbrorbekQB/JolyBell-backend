@@ -22,7 +22,7 @@ public class ScheduleService {
     @Scheduled(cron = "*/20 * * * * ?")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void returnReservedProduct() {
-        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findTop10ByReturnedFalseAndCreateDateBefore(LocalDateTime.now().minusMinutes(5));
+        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findTop10ByReturnedFalseAndCreateDateBefore(LocalDateTime.now().minusMinutes(10));
         productService.returnReservedProduct(reservedProductEntityList);
     }
 }
