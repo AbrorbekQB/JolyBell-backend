@@ -11,8 +11,10 @@ import uz.greenstar.jolybell.dto.order.OrderGetDTO;
 import uz.greenstar.jolybell.dto.order.OrderDTO;
 import uz.greenstar.jolybell.dto.order.CheckoutOrderDTO;
 import uz.greenstar.jolybell.entity.*;
+import uz.greenstar.jolybell.enums.OrderState;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.enums.PaymentType;
+import uz.greenstar.jolybell.enums.ReservedProductStatus;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
 import uz.greenstar.jolybell.exception.product.ProductAlreadySoldException;
@@ -249,7 +251,7 @@ public class OrderService {
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderRepository.save(orderEntity);
 
-        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findAllByOrderIdAndReturnedFalse(orderEntity.getId());
+        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findAllByOrderIdAndStatus(orderEntity.getId(), ReservedProductStatus.RESERVED);
         productService.returnReservedProduct(reservedProductEntityList);
     }
 
@@ -278,6 +280,15 @@ public class OrderService {
         orderEntity.setPaymentType(PaymentType.PAYSYS);
         orderEntity.setLastUpdateTime(LocalDateTime.now());
         orderRepository.save(orderEntity);
+    }
+
+    public List<OrderEntity> list() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        Optional<UserEntity> userOptional = userRepository.findByUsername(username);
+        if (userOptional.isEmpty())
+            throw new UsernameNotFoundException("User not found!");
+
+        return orderRepository.findAllByUserAndStateIsNotOrderByCreatedDateTimeDesc(userOptional.get(), OrderState.PENDING);
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);

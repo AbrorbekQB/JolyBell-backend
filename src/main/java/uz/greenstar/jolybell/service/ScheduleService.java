@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import uz.greenstar.jolybell.entity.ReservedProductEntity;
+import uz.greenstar.jolybell.enums.ReservedProductStatus;
 import uz.greenstar.jolybell.repository.ReservedProductRepository;
 
 import java.time.LocalDateTime;
@@ -22,7 +23,7 @@ public class ScheduleService {
     @Scheduled(cron = "*/20 * * * * ?")
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void returnReservedProduct() {
-        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findTop10ByReturnedFalseAndCreateDateBefore(LocalDateTime.now().minusMinutes(10));
+        List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findTop10ByStatusAndCreateDateBefore(ReservedProductStatus.RESERVED, LocalDateTime.now().minusMinutes(10));
         productService.returnReservedProduct(reservedProductEntityList);
     }
 }

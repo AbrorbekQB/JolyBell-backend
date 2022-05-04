@@ -20,6 +20,7 @@ import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.product.ProductDTO;
 import uz.greenstar.jolybell.entity.*;
 import uz.greenstar.jolybell.enums.OrderStatus;
+import uz.greenstar.jolybell.enums.ReservedProductStatus;
 import uz.greenstar.jolybell.exception.CategoryNotFoundException;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
@@ -314,7 +315,7 @@ public class ProductService {
                 productCountEntityOptional.get().setLastUpdateDate(LocalDateTime.now());
                 productCountRepository.save(productCountEntityOptional.get());
             }
-            reservedProductEntity.setReturned(true);
+            reservedProductEntity.setStatus(ReservedProductStatus.RETURNED);
             reservedProductEntity.setLastUpdateDate(LocalDateTime.now());
             reservedProductRepository.save(reservedProductEntity);
 

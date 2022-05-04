@@ -18,11 +18,14 @@ import uz.greenstar.jolybell.config.PaySysConfProperties;
 import uz.greenstar.jolybell.dto.payment.PaySysPayDTO;
 import uz.greenstar.jolybell.entity.OrderEntity;
 import uz.greenstar.jolybell.entity.PaySysEntity;
+import uz.greenstar.jolybell.entity.ReservedProductEntity;
 import uz.greenstar.jolybell.enums.OrderState;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.enums.PaySysStatus;
+import uz.greenstar.jolybell.enums.ReservedProductStatus;
 import uz.greenstar.jolybell.repository.OrderRepository;
 import uz.greenstar.jolybell.repository.PaySysRepository;
+import uz.greenstar.jolybell.repository.ReservedProductRepository;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -37,6 +40,7 @@ public class PaySysService {
     private final OrderRepository orderRepository;
     private final PaySysConfProperties paySysConfProperties;
     private final PaySysRepository paySysRepository;
+    private final ReservedProductRepository reservedProductRepository;
 
     @Autowired
     @Qualifier("sslRestTemplate")
@@ -117,6 +121,11 @@ public class PaySysService {
             optionalOrder.get().setLastUpdateTime(LocalDateTime.now());
             optionalOrder.get().setStatus(OrderStatus.PAY_SUCCESS);
             optionalOrder.get().setState(OrderState.USER_FINISH);
+            List<ReservedProductEntity> reservedProductEntityList = reservedProductRepository.findAllByOrderIdAndStatus(optionalOrder.get().getId(), ReservedProductStatus.RESERVED);
+            reservedProductEntityList.forEach(reservedProductEntity -> {
+                reservedProductEntity.setStatus(ReservedProductStatus.PAID);
+                reservedProductRepository.save(reservedProductEntity);
+            });
             orderRepository.save(optionalOrder.get());
         } else {
             updateData(paySysEntity, PaySysStatus.CHECK_FAIL);

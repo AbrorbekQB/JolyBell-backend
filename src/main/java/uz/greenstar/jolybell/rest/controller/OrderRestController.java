@@ -8,7 +8,10 @@ import uz.greenstar.jolybell.dto.order.ChoicePaymentDTO;
 import uz.greenstar.jolybell.dto.order.OrderGetDTO;
 import uz.greenstar.jolybell.dto.order.OrderDTO;
 import uz.greenstar.jolybell.dto.order.CheckoutOrderDTO;
+import uz.greenstar.jolybell.entity.OrderEntity;
 import uz.greenstar.jolybell.service.OrderService;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/order")
@@ -29,6 +32,11 @@ public class OrderRestController {
     @GetMapping("/amount/{id}")
     public String amount(@PathVariable("id") String id) {
         return orderService.getAmount(id);
+    }
+
+    @GetMapping("/list")
+    public List<OrderEntity> list(){
+        return orderService.list();
     }
 
     @PostMapping(path = "/get")
