@@ -1,6 +1,7 @@
 package uz.greenstar.jolybell.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -11,26 +12,34 @@ import uz.greenstar.jolybell.api.auth.LoginRequest;
 import uz.greenstar.jolybell.api.auth.LoginResponse;
 import uz.greenstar.jolybell.api.auth.RegistrationRequest;
 import uz.greenstar.jolybell.api.jwt.JwtDTO;
+import uz.greenstar.jolybell.entity.ActivationCodeEntity;
 import uz.greenstar.jolybell.entity.RoleEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.exception.BadCredentialsException;
 import uz.greenstar.jolybell.exception.UserCreationException;
+import uz.greenstar.jolybell.repository.ActivationCodeRepository;
 import uz.greenstar.jolybell.repository.RoleRepository;
 import uz.greenstar.jolybell.repository.UserRepository;
 //import uz.greenstar.jolybell.repository.UserRoleRepository;
 //import uz.greenstar.jolybell.utils.JwtUtils;
 
+import javax.annotation.PostConstruct;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
-//    private final UserRoleRepository userRoleRepository;
+    //    private final UserRoleRepository userRoleRepository;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final ActivationCodeRepository activationCodeRepository;
 
     public ResponseEntity<LoginResponse> login(LoginRequest request) {
         try {
@@ -58,6 +67,13 @@ public class AuthService {
             throw new UserCreationException("Can not find \"USER\" role");
         userEntity.getRoleList().add(optionalRole.get());
 
+        ActivationCodeEntity activationCodeEntity = new ActivationCodeEntity();
+        activationCodeEntity.setId(UUID.randomUUID().toString());
+        activationCodeEntity.setUserId(userEntity.getId());
+        activationCodeRepository.save(activationCodeEntity);
+
+        emailService.sendEmail("Verify account", activationCodeEntity.getId(), registration.getUsername());
+
         userRepository.save(userEntity);
         return getLoginResponse(userEntity);
     }
@@ -65,7 +81,7 @@ public class AuthService {
     private ResponseEntity<LoginResponse> getLoginResponse(UserEntity user) {
         List<String> roleList = user.getRoleList()
                 .stream()
-                .map(userRoleEntity -> userRoleEntity.getName())
+                .map(RoleEntity::getName)
                 .collect(Collectors.toList());
         JwtDTO jwtDTO = new JwtDTO(user.getId(), user.getUsername(), roleList);
 
@@ -76,5 +92,20 @@ public class AuthService {
 //        response.setToken(jwtUtils.getJwt(jwtDTO));
         return ResponseEntity.ok().header(HttpHeaders.AUTHORIZATION, response.getToken())
                 .body(response);
+    }
+
+    public String verify(String id) {
+        Optional<ActivationCodeEntity> activationCodeEntityOptional = activationCodeRepository.findById(id);
+        if (activationCodeEntityOptional.isEmpty() || activationCodeEntityOptional.get().getCreateTime().isBefore(LocalDateTime.now().minusMinutes(5)))
+            return "Verify error!";
+
+
+        Optional<UserEntity> userEntityOptional = userRepository.findById(activationCodeEntityOptional.get().getUserId());
+        if (userEntityOptional.isEmpty())
+            return "Verify error!";
+
+        userEntityOptional.get().setActive(Boolean.TRUE);
+        userRepository.save(userEntityOptional.get());
+        return "Verify success!";
     }
 }

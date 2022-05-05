@@ -29,4 +29,10 @@ public class AuthRestController {
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
         return authService.login(request);
     }
+
+    @GetMapping("/verify/{id}")
+    public String verify(@PathVariable("id") String id) {
+        return authService.verify(id);
+    }
+
 }

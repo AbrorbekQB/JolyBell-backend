@@ -54,16 +54,6 @@ public class UserService implements UserDetailsService {
         return new User(optionalUser.get().getUsername(), optionalUser.get().getPassword(), authorities);
     }
 
-//    private final AuthenticationManager authenticationManager;
-
-    public String login(UserDTO userDTO) {
-        Optional<UserEntity> optionalUser = userRepository.findByUsername(userDTO.getUsername());
-//        if (optionalUser.isEmpty())
-//            throw new ItemNotFoundException("User not found!");
-        System.out.println(userDTO);
-        return "1231234124";
-    }
-
     public UserDTO get() {
         Authentication authenticate = SecurityContextHolder.getContext().getAuthentication();
         Optional<UserEntity> optionalUser = userRepository.findByUsername(authenticate.getName());
