@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import uz.greenstar.jolybell.api.order.OrderData;
 import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.order.ChoicePaymentDTO;
@@ -23,6 +24,7 @@ import uz.greenstar.jolybell.repository.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -282,13 +284,28 @@ public class OrderService {
         orderRepository.save(orderEntity);
     }
 
-    public List<OrderEntity> list() {
+    public List<OrderData> list() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         Optional<UserEntity> userOptional = userRepository.findByUsername(username);
         if (userOptional.isEmpty())
             throw new UsernameNotFoundException("User not found!");
 
-        return orderRepository.findAllByUserAndStateIsNotOrderByCreatedDateTimeDesc(userOptional.get(), OrderState.PENDING);
+        List<OrderEntity> orderEntities = orderRepository.findAllByUserAndStateIsNotOrderByCreatedDateTimeDesc(userOptional.get(), OrderState.PENDING);
+        return orderEntities.stream().map(orderEntity -> {
+            OrderData orderData = new OrderData();
+            orderData.setState(orderEntity.getState());
+            orderData.setId(orderEntity.getId());
+            orderData.setCreatedDate(orderEntity.getCreatedDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+
+            List<OrderItem> orderItems = new ArrayList<>();
+            orderEntity.getOrderItems().forEach((productId, orderItems1) -> {
+                orderItems.addAll(orderItems1);
+            });
+
+            orderData.setOrderItems(orderItems);
+            orderData.setTotalAmount(orderEntity.getTotalAmount());
+            return orderData;
+        }).collect(Collectors.toList());
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);

@@ -2,6 +2,7 @@ package uz.greenstar.jolybell.rest.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import uz.greenstar.jolybell.api.order.OrderData;
 import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
 import uz.greenstar.jolybell.dto.order.ChoicePaymentDTO;
@@ -35,7 +36,7 @@ public class OrderRestController {
     }
 
     @GetMapping("/list")
-    public List<OrderEntity> list(){
+    public List<OrderData> list(){
         return orderService.list();
     }
 
