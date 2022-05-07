@@ -8,6 +8,7 @@ import uz.greenstar.jolybell.api.filterForm.FilterResponse;
 import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.ProductCountDTO;
 import uz.greenstar.jolybell.dto.product.ProductDTO;
+import uz.greenstar.jolybell.dto.product.ProductEditDTO;
 import uz.greenstar.jolybell.service.ProductService;
 
 import java.util.List;
@@ -34,7 +35,7 @@ public class AdminProductRestController {
     }
 
     @PostMapping("/add")
-    public void add(@RequestBody ProductCountDTO dto){
+    public void add(@RequestBody ProductCountDTO dto) {
         productService.add(dto);
     }
 
@@ -44,7 +45,12 @@ public class AdminProductRestController {
     }
 
     @GetMapping("/get/{id}")
-    public ProductDTO get(@PathVariable("id") String productId){
+    public ProductDTO get(@PathVariable("id") String productId) {
         return productService.getByAdmin(productId);
+    }
+
+    @PostMapping(path = "/edit")
+    public void edit(@RequestBody ProductEditDTO dto) {
+        productService.edit(dto);
     }
 }

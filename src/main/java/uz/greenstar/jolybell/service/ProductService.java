@@ -6,6 +6,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.core.env.Environment;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -18,6 +19,7 @@ import uz.greenstar.jolybell.dto.ImageItem;
 import uz.greenstar.jolybell.dto.ProductCountDTO;
 import uz.greenstar.jolybell.dto.product.CreateProductDTO;
 import uz.greenstar.jolybell.dto.product.ProductDTO;
+import uz.greenstar.jolybell.dto.product.ProductEditDTO;
 import uz.greenstar.jolybell.entity.*;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.enums.ReservedProductStatus;
@@ -325,5 +327,25 @@ public class ProductService {
                 orderRepository.save(optionalOrder.get());
             }
         });
+    }
+
+    public void edit(ProductEditDTO dto) {
+        Optional<ProductEntity> productEntityOptional = productRepository.findById(dto.getId());
+        if (productEntityOptional.isEmpty())
+            throw new BadCredentialsException("Product not found");
+
+        ProductEntity productEntity = productEntityOptional.get();
+        productEntity.setName(dto.getName());
+        productEntity.setCost(dto.getCost());
+        productEntity.setAdvice(dto.getAdvice());
+        productEntity.setImageItems(dto.getImageItems());
+        productEntity.setDescriptionItems(dto.getDescriptionItems().stream().map(s -> {
+            DescriptionItem descriptionItem = new DescriptionItem();
+            descriptionItem.setText(s);
+            return descriptionItem;
+        }).collect(Collectors.toList()));
+        productEntity.setLastUpdate(LocalDateTime.now());
+
+        productRepository.save(productEntity);
     }
 }
