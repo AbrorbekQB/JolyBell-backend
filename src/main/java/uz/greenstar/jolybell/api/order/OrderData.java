@@ -15,5 +15,10 @@ public class OrderData {
     private String createdDate;
     private List<OrderItem> orderItems;
     private OrderState state;
+    private OrderStatus status;
     private BigDecimal totalAmount;
+    private String email;
+    private String address;
+    private String note;
+    private String province;
 }

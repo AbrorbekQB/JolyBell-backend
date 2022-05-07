@@ -1,9 +1,15 @@
 package uz.greenstar.jolybell.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import uz.greenstar.jolybell.api.filterForm.FilterRequest;
+import uz.greenstar.jolybell.api.filterForm.FilterResponse;
 import uz.greenstar.jolybell.api.order.OrderData;
 import uz.greenstar.jolybell.api.order.OrderItem;
 import uz.greenstar.jolybell.api.order.OrderItemRemove;
@@ -16,10 +22,13 @@ import uz.greenstar.jolybell.enums.OrderState;
 import uz.greenstar.jolybell.enums.OrderStatus;
 import uz.greenstar.jolybell.enums.PaymentType;
 import uz.greenstar.jolybell.enums.ReservedProductStatus;
+import uz.greenstar.jolybell.exception.ItemNotFoundException;
 import uz.greenstar.jolybell.exception.OrderNotFoundException;
 import uz.greenstar.jolybell.exception.ProductNotFoundException;
 import uz.greenstar.jolybell.exception.product.ProductAlreadySoldException;
 import uz.greenstar.jolybell.repository.*;
+import uz.greenstar.jolybell.repository.spec.CategoryListByAdminSpecification;
+import uz.greenstar.jolybell.repository.spec.OrderListByAdminSpecification;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -39,6 +48,7 @@ public class OrderService {
     private final ProductCountRepository productCountRepository;
     private final ReservedProductRepository reservedProductRepository;
     private final ProductService productService;
+    private final ProvinceRepository provinceRepository;
 
     public String create(OrderItem orderItem) {
         OrderEntity orderEntity = new OrderEntity();
@@ -306,6 +316,79 @@ public class OrderService {
             orderData.setTotalAmount(orderEntity.getTotalAmount());
             return orderData;
         }).collect(Collectors.toList());
+    }
+
+    public FilterResponse listByAdmin(FilterRequest filterRequest) {
+        PageRequest pageRequest = PageRequest.of(filterRequest.getPage() - 1, filterRequest.getLength());
+
+        FilterResponse filterResponse = new FilterResponse();
+
+        Page<OrderEntity> orderEntityPage = orderRepository.findAll(OrderListByAdminSpecification.getFilteredPayment(filterRequest),
+                pageRequest);
+
+        List<OrderData> orderDataList = orderEntityPage.stream().filter(orderEntity -> {
+            String provinceId = filterRequest.getFilterData().get("province");
+            if (provinceId.equalsIgnoreCase("all"))
+                return true;
+            if (orderEntity.getReceiverDetails().getProvince().equals(provinceId))
+                return true;
+            return false;
+        }).map(orderEntity -> {
+            OrderData orderData = new OrderData();
+            orderData.setStatus(orderEntity.getStatus());
+            orderData.setState(orderEntity.getState());
+            orderData.setId(orderEntity.getId());
+            orderData.setTotalAmount(orderEntity.getTotalAmount());
+            orderData.setCreatedDate(orderEntity.getCreatedDateTime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            orderData.setEmail("");
+            orderData.setAddress("");
+            orderData.setProvince("");
+            if (Objects.nonNull(orderEntity.getReceiverDetails())) {
+                orderData.setEmail(orderEntity.getReceiverDetails().getUsername());
+                orderData.setAddress(orderEntity.getReceiverDetails().getAddress());
+                if (StringUtils.hasText(orderEntity.getReceiverDetails().getProvince()))
+                    orderData.setProvince(provinceRepository.findById(orderEntity.getReceiverDetails().getProvince()).get().getName());
+            }
+            orderData.setNote(orderEntity.getNote());
+
+            List<OrderItem> orderItems = new ArrayList<>();
+            orderEntity.getOrderItems().forEach((productId, orderItems1) -> {
+                orderItems.addAll(orderItems1);
+            });
+            orderData.setOrderItems(orderItems);
+            return orderData;
+        }).collect(Collectors.toList());
+
+        filterResponse.setCount(orderDataList.size());
+        filterResponse.setData(orderDataList);
+        filterResponse.setTotalCount(orderEntityPage.getTotalElements());
+        filterResponse.setPages(filterRequest.getPage());
+        return filterResponse;
+    }
+
+    public void accept(String id) {
+        Optional<OrderEntity> orderEntityOptional = orderRepository.findById(id);
+        if (orderEntityOptional.isEmpty())
+            throw new ItemNotFoundException("Order not found!");
+
+        OrderEntity orderEntity = orderEntityOptional.get();
+        switch (orderEntity.getState()) {
+            case USER_FINISH:
+                orderEntity.setState(OrderState.WAREHOUSE);
+                break;
+            case WAREHOUSE:
+                orderEntity.setState(OrderState.SUPPLIER);
+                break;
+            case SUPPLIER:
+                orderEntity.setState(OrderState.FINISHED);
+                break;
+            case FINISHED:
+                throw new BadCredentialsException("Order already finished!");
+            default:
+                throw new BadCredentialsException("Error state");
+        }
+        orderEntity.setLastUpdateTime(LocalDateTime.now());
+        orderRepository.save(orderEntity);
     }
 //    public OrderDTO get(String id) {
 //        Optional<OrderEntity> optionalBooking = bookingRepository.findById(id);

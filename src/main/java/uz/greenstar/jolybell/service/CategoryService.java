@@ -92,6 +92,7 @@ public class CategoryService {
             return categoryDTO;
         }).collect(Collectors.toList());
 
+        filterResponse.setCount(categoryDTOList.size());
         filterResponse.setData(categoryDTOList);
         filterResponse.setTotalCount(categoryEntityPage.getTotalElements());
         filterResponse.setPages(request.getPage());
