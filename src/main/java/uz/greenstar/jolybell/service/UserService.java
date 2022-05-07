@@ -5,6 +5,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,15 +18,14 @@ import org.springframework.stereotype.Service;
 import uz.greenstar.jolybell.api.filterForm.FilterRequest;
 import uz.greenstar.jolybell.api.filterForm.FilterResponse;
 import uz.greenstar.jolybell.dto.user.ChangePasswordDTO;
+import uz.greenstar.jolybell.dto.user.ForgotPasswordDTO;
 import uz.greenstar.jolybell.dto.user.UserDTO;
+import uz.greenstar.jolybell.entity.ActivationCodeEntity;
 import uz.greenstar.jolybell.entity.RoleEntity;
 import uz.greenstar.jolybell.entity.UserEntity;
 import uz.greenstar.jolybell.exception.ItemNotFoundException;
-import uz.greenstar.jolybell.repository.DistrictRepository;
-import uz.greenstar.jolybell.repository.ProvinceRepository;
-import uz.greenstar.jolybell.repository.RoleRepository;
+import uz.greenstar.jolybell.repository.*;
 import uz.greenstar.jolybell.repository.spec.UserListByAdminSpecification;
-import uz.greenstar.jolybell.repository.UserRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -40,6 +40,8 @@ public class UserService implements UserDetailsService {
     private final ProvinceRepository provinceRepository;
     private final DistrictRepository districtRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final ActivationCodeRepository activationCodeRepository;
+    private final EmailService emailService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -145,5 +147,42 @@ public class UserService implements UserDetailsService {
 
         userEntityOptional.get().setPassword(passwordEncoder.encode(dto.getPassword()));
         userRepository.save(userEntityOptional.get());
+    }
+
+    public void forgotPassword(UserDTO dto) {
+        Optional<UserEntity> userEntityOptional = userRepository.findByUsername(dto.getUsername());
+        if (userEntityOptional.isEmpty())
+            throw new UsernameNotFoundException("User not found");
+        UserEntity userEntity = userEntityOptional.get();
+
+        ActivationCodeEntity activationCodeEntity = new ActivationCodeEntity();
+        activationCodeEntity.setUserId(userEntity.getId());
+
+        boolean uniqId = false;
+        while (!uniqId) {
+            activationCodeEntity.setId(generateCode());
+            if (activationCodeRepository.findById(activationCodeEntity.getId()).isEmpty())
+                uniqId = true;
+        }
+        activationCodeRepository.save(activationCodeEntity);
+
+        Thread thread = new Thread(() -> emailService.sendEmail("Forgot Password", activationCodeEntity.getId(), dto.getUsername()));
+        thread.start();
+
+    }
+
+    private String generateCode() {
+        return String.valueOf((int) (Math.random() * 899999 + 100000));
+    }
+
+    public void verifyPassword(ForgotPasswordDTO dto) {
+        Optional<ActivationCodeEntity> activationCodeEntityOptional = activationCodeRepository.findById(dto.getConfirmCode());
+        if (activationCodeEntityOptional.isEmpty())
+            throw new ItemNotFoundException("Activation not found!");
+        Optional<UserEntity> userEntityOptional = userRepository.findById(activationCodeEntityOptional.get().getUserId());
+        UserEntity userEntity = userEntityOptional.get();
+        userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userEntity.setLastUpdateTime(LocalDateTime.now());
+        userRepository.save(userEntity);
     }
 }

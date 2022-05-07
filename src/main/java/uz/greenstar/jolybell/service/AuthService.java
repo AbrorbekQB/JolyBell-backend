@@ -59,6 +59,9 @@ public class AuthService {
     }
 
     public ResponseEntity<LoginResponse> registration(RegistrationRequest registration) {
+        Optional<UserEntity> userEntityOptional = userRepository.findByUsername(registration.getUsername());
+        if (userEntityOptional.isPresent())
+            throw new UserCreationException("User already exist");
         UserEntity userEntity = new UserEntity();
         BeanUtils.copyProperties(registration, userEntity);
         userEntity.setPassword(passwordEncoder.encode(userEntity.getPassword()));
@@ -72,7 +75,10 @@ public class AuthService {
         activationCodeEntity.setUserId(userEntity.getId());
         activationCodeRepository.save(activationCodeEntity);
 
-        emailService.sendEmail("Verify account", activationCodeEntity.getId(), registration.getUsername());
+
+        Thread thread = new Thread(() -> emailService.sendEmail("Verify account", activationCodeEntity.getId(), registration.getUsername()));
+
+        thread.start();
 
         userRepository.save(userEntity);
         return getLoginResponse(userEntity);

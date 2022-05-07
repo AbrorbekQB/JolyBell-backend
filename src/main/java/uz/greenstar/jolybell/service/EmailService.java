@@ -22,7 +22,10 @@ public class EmailService {
             MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
             helper.setSubject(subject);
-            helper.setText(Objects.requireNonNull(environment.getProperty("spring.mail.url")) + "/" + id);
+            if (id.length() == 6)
+                helper.setText("http://localhost:4200/verify-user\n" + id);
+            else
+                helper.setText(Objects.requireNonNull(environment.getProperty("spring.mail.url")) + "/" + id);
             helper.setTo(receiver);
             helper.setFrom(Objects.requireNonNull(environment.getProperty("spring.mail.username")));
             javaMailSender.send(message);

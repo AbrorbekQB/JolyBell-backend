@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import uz.greenstar.jolybell.api.validation.ValidatorError;
 import uz.greenstar.jolybell.dto.user.ChangePasswordDTO;
+import uz.greenstar.jolybell.dto.user.ForgotPasswordDTO;
 import uz.greenstar.jolybell.dto.user.UserDTO;
 import uz.greenstar.jolybell.exception.ValidationException;
 import uz.greenstar.jolybell.service.UserService;
@@ -42,5 +43,15 @@ public class UserRestController {
     @PostMapping(path = "/change/password")
     public void changePassword(@RequestBody ChangePasswordDTO dto) {
         userService.changePassword(dto);
+    }
+
+    @PostMapping(path = "/forgot/password")
+    public void forgotPassword(@RequestBody UserDTO dto) {
+        userService.forgotPassword(dto);
+    }
+
+    @PostMapping(path = "/verify/password")
+    public void verifyPassword(@RequestBody ForgotPasswordDTO dto) {
+        userService.verifyPassword(dto);
     }
 }
