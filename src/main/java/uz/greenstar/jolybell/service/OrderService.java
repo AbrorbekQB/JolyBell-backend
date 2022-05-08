@@ -343,9 +343,11 @@ public class OrderService {
             orderData.setEmail("");
             orderData.setAddress("");
             orderData.setProvince("");
+            orderData.setPhoneNumber("");
             if (Objects.nonNull(orderEntity.getReceiverDetails())) {
                 orderData.setEmail(orderEntity.getReceiverDetails().getUsername());
                 orderData.setAddress(orderEntity.getReceiverDetails().getAddress());
+                orderData.setPhoneNumber(orderEntity.getReceiverDetails().getPhoneNumber());
                 if (StringUtils.hasText(orderEntity.getReceiverDetails().getProvince()))
                     orderData.setProvince(provinceRepository.findById(orderEntity.getReceiverDetails().getProvince()).get().getName());
             }

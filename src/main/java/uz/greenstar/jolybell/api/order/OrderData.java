@@ -21,4 +21,5 @@ public class OrderData {
     private String address;
     private String note;
     private String province;
+    private String phoneNumber;
 }
