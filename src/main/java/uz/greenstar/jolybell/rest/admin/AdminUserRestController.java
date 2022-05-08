@@ -19,7 +19,7 @@ public class AdminUserRestController {
     }
 
     @PostMapping("/create")
-    public void createAdmin(@RequestBody UserDTO dto){
+    public void createAdmin(@RequestBody UserDTO dto) {
         userService.createAdmin(dto);
     }
 }
