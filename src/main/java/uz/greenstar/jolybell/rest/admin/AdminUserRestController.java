@@ -22,4 +22,9 @@ public class AdminUserRestController {
     public void createAdmin(@RequestBody UserDTO dto) {
         userService.createAdmin(dto);
     }
+
+    @GetMapping(path = "/change/active/{id}")
+    public void changeActive(@PathVariable("id") String id) {
+        userService.changeActive(id);
+    }
 }

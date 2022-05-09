@@ -154,6 +154,10 @@ public class ProductService {
                 productCountDTOS.add(productCountDTOMap.get(s));
             }
         });
+
+        if (productCountDTOMap.containsKey("all"))
+            productCountDTOS.add(productCountDTOMap.get("all"));
+
         return productCountDTOS;
     }
 

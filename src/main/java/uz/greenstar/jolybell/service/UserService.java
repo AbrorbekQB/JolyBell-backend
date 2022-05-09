@@ -76,7 +76,7 @@ public class UserService implements UserDetailsService {
     }
 
     public FilterResponse getListForAdmin(FilterRequest request) {
-        Pageable pageable = PageRequest.of(request.getPage(), request.getLength());
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getLength());
         Page<UserEntity> userEntityPage = userRepository.findAll(UserListByAdminSpecification.getFilteredPayments(request), pageable);
 
         FilterResponse response = new FilterResponse();
@@ -97,16 +97,20 @@ public class UserService implements UserDetailsService {
     }
 
     public void createAdmin(UserDTO dto) {
+        Optional<UserEntity> userEntityOptional = userRepository.findByUsername(dto.getUsername());
+        if (userEntityOptional.isPresent())
+            throw new BadCredentialsException("This user already exists!");
         UserEntity userEntity = new UserEntity();
         userEntity.setFirstname(dto.getFirstname());
         userEntity.setLastname(dto.getLastname());
         userEntity.setPatronymic(dto.getPatronymic());
-        userEntity.setPassword(dto.getPassword());
+        userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
         userEntity.setUsername(dto.getUsername());
         userEntity.setPhoneNumber(dto.getPhoneNumber());
 
         Optional<RoleEntity> roleOptional = roleRepository.findByName("ROLE_ADMIN");
-        userEntity.setRoleList(Set.of(roleOptional.get()));
+        Optional<RoleEntity> roleOptional1 = roleRepository.findByName("ROLE_USER");
+        userEntity.setRoleList(Set.of(roleOptional.get(), roleOptional1.get()));
         userRepository.save(userEntity);
     }
 
@@ -182,6 +186,16 @@ public class UserService implements UserDetailsService {
         Optional<UserEntity> userEntityOptional = userRepository.findById(activationCodeEntityOptional.get().getUserId());
         UserEntity userEntity = userEntityOptional.get();
         userEntity.setPassword(passwordEncoder.encode(dto.getPassword()));
+        userEntity.setLastUpdateTime(LocalDateTime.now());
+        userRepository.save(userEntity);
+    }
+
+    public void changeActive(String id) {
+        Optional<UserEntity> userEntityOptional = userRepository.findById(id);
+        if (userEntityOptional.isEmpty())
+            throw new UsernameNotFoundException("User not found!");
+        UserEntity userEntity = userEntityOptional.get();
+        userEntity.setActive(!userEntity.getActive());
         userEntity.setLastUpdateTime(LocalDateTime.now());
         userRepository.save(userEntity);
     }
