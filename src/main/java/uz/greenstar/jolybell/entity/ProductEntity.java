@@ -40,7 +40,7 @@ public class ProductEntity {
     private BigDecimal cost;
     private long count;
     private String advice;
-    private Boolean active;
+    private Boolean active = false;
     private Boolean withSize;
     private LocalDateTime createdDate = LocalDateTime.now();
     private LocalDateTime lastUpdate = LocalDateTime.now();
