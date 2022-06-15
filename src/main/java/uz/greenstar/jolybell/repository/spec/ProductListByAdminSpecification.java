@@ -18,7 +18,7 @@ public class ProductListByAdminSpecification {
             List<Predicate> predicateList = new ArrayList<>();
 
             if (request.getFilterData().containsKey("search") && StringUtils.hasText(request.getFilterData().get("search")))
-                predicateList.add(criteriaBuilder.like(criteriaBuilder.lower(root.get(ProductEntity_.NAME)), "%" + request.getFilterData().get("search") + "%".toLowerCase()));
+                predicateList.add(criteriaBuilder.like(criteriaBuilder.lower(root.get(ProductEntity_.NAME)), "%" + request.getFilterData().get("search").toLowerCase() + "%"));
 
             query.orderBy(criteriaBuilder.desc(root.get(ProductEntity_.ACTIVE)))
                     .orderBy(criteriaBuilder.desc(root.get(ProductEntity_.NAME)));

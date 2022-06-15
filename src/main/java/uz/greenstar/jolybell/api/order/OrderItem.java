@@ -13,7 +13,7 @@ public class OrderItem {
     private String id = UUID.randomUUID().toString();
     private String productId;
     private String productCountId;
-    private String name = "Abror";
+    private String name;
     private String url;
     private long count;
     private long reservedCount = 0;

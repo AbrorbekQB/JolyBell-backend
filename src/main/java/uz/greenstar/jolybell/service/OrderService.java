@@ -62,6 +62,7 @@ public class OrderService {
         if (productCountEntity.getCount() < orderItem.getCount())
             orderItem.setCount(productCountEntity.getCount());
 
+        orderItem.setName(productCountEntity.getProduct().getName());
         orderItem.setProductCountId(productCountEntity.getId());
         orderEntity.getOrderItems().put(orderItem.getProductId(), List.of(orderItem));
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
